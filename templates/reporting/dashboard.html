@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Boshqaruv paneli{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Boshqaruv paneli</li>
+{% endblock %}
+
+{% block content %}
+<!-- Top Header & Period Filter -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            {% if is_owner %}
+                <i class="bi bi-speedometer2 text-primary me-2"></i>Markaz ko'rsatkichlari (Ega paneli)
+            {% else %}
+                <i class="bi bi-clipboard-check text-primary me-2"></i>Administrator ish stoli
+            {% endif %}
+        </h4>
+        <p class="text-muted small mb-0">Haqiqiy ma'lumotlar asosida hisoblangan tezkor statistika</p>
+    </div>
+
+    <form method="get" class="d-flex align-items-center gap-2">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-calendar-range text-muted"></i></span>
+            <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="form-control form-control-sm">
+            <span class="input-group-text bg-white">dan</span>
+            <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="form-control form-control-sm">
+            <button type="submit" class="btn btn-sm btn-primary">Yangilash</button>
+        </div>
+    </form>
+</div>
+
+{% if is_owner %}
+<!-- ================= OWNER DASHBOARD ================= -->
+<!-- Stat Cards Row 1: Core Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card shadow-sm border-0 border-start border-4 border-primary">
+            <div class="text-muted small fw-semibold">Faol o‘quvchilar</div>
+            <div class="d-flex align-items-center justify-content-between mt-2">
+                <div class="fs-3 fw-bold text-dark">{{ metrics.active_students_count }}</div>
+                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-circle">
+                    <i class="bi bi-people-fill fs-5"></i>
+                </div>
+            </div>
+            <div class="text-muted small mt-2">
+                {{ metrics.active_groups_count }} ta guruh | {{ metrics.active_teachers_count }} ta o'qituvchi
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card shadow-sm border-0 border-start border-4 border-success">
+            <div class="text-muted small fw-semibold">Haqiqiy to‘lov tushumlari (Kassa)</div>
+            <div class="d-flex align-items-center justify-content-between mt-2">
+                <div class="fs-4 fw-bold text-success">{{ metrics.payments_in_period|uzs }}</div>
+                <div class="bg-success bg-opacity-10 text-success p-2 rounded-circle">
+                    <i class="bi bi-cash-stack fs-5"></i>
+                </div>
+            </div>
+            <div class="text-muted small mt-2">
+                Tanlangan davrdagi amaldagi kirim
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card shadow-sm border-0 border-start border-4 border-info">
+            <div class="text-muted small fw-semibold">Hisoblangan ta'lim summasi</div>
+            <div class="d-flex align-items-center justify-content-between mt-2">
+                <div class="fs-4 fw-bold text-primary">{{ metrics.charges_in_period|uzs }}</div>
+                <div class="bg-info bg-opacity-10 text-info p-2 rounded-circle">
+                    <i class="bi bi-receipt fs-5"></i>
+                </div>
+            </div>
+            <div class="text-muted small mt-2">
+                Xizmat ko'rsatish bo'yicha jami hisob
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card shadow-sm border-0 border-start border-4 border-danger">
+            <div class="text-muted small fw-semibold">O‘quvchilar umumiy qarzdorligi</div>
+            <div class="d-flex align-items-center justify-content-between mt-2">
+                <div class="fs-4 fw-bold text-danger">{{ metrics.total_debt|uzs }}</div>
+                <div class="bg-danger bg-opacity-10 text-danger p-2 rounded-circle">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                </div>
+            </div>
+            <div class="text-muted small mt-2">
+                {{ metrics.overdue_count }} ta to'lov muddati o'tgan
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stat Cards Row 2: Financial Expenses & Profit -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card shadow-sm border-0">
+            <div class="text-muted small fw-semibold">Ish haqi (To‘langan / Hisoblangan)</div>
+            <div class="fs-5 fw-bold text-dark mt-2">
+                {{ metrics.salaries_paid|uzs }}
+            </div>
+            <div class="text-muted small mt-1">
+                Jami hisoblangan: {{ metrics.salaries_accrued|uzs }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card shadow-sm border-0">
+            <div class="text-muted small fw-semibold">Operatsion xarajatlar</div>
+            <div class="fs-5 fw-bold text-danger mt-2">
+                {{ metrics.expenses_total|uzs }}
+            </div>
+            <div class="text-muted small mt-1">
+                Ijara, kommunal, reklama va boshqalar
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card shadow-sm border-0">
+            <div class="text-muted small fw-semibold">Hisoblangan operatsion foyda</div>
+            <div class="fs-5 fw-bold {% if metrics.accrual_profit >= 0 %}text-success{% else %}text-danger{% endif %} mt-2">
+                {{ metrics.accrual_profit|uzs }}
+            </div>
+            <div class="text-muted small mt-1">
+                Hisoblangan daromad - Maosh - Xarajat
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card shadow-sm border-0">
+            <div class="text-muted small fw-semibold">Sof kassa pul oqimi (Net Cash Flow)</div>
+            <div class="fs-5 fw-bold {% if metrics.net_cash_flow >= 0 %}text-primary{% else %}text-danger{% endif %} mt-2">
+                {{ metrics.net_cash_flow|uzs }}
+            </div>
+            <div class="text-muted small mt-1">
+                Kassaga kirim - Chiqimlar
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart & Upcoming Deadlines -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-line text-primary me-2"></i>Pul oqimi dinamikasi (Oxirgi 6 oy)</h6>
+                <div class="small text-muted">Kassa tushumi va Chiqimlar</div>
+            </div>
+            <div class="card-body p-3">
+                <canvas id="cashFlowChart" height="130"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-warning me-2"></i>Yaqinlashayotgan to‘lov muddatlari</h6>
+                <a href="{% url 'billing:debtors_list' %}" class="btn btn-sm btn-light">Barchasi</a>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for charge in upcoming_charges %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <a href="{% url 'students:student_detail' charge.student.id %}" class="fw-bold text-decoration-none text-dark">
+                                {{ charge.student.full_name }}
+                            </a>
+                            <div class="text-muted small">
+                                Muddati: {{ charge.due_date|date:"d-M" }} | {{ charge.enrollment.group.name }}
+                            </div>
+                        </div>
+                        <span class="fw-bold text-danger">{{ charge.remaining_balance|uzs }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-center py-4 text-muted small">
+                        Yaqin muddatda to'lovlar kutilmayapti.
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- ================= ADMIN DASHBOARD ================= -->
+<!-- Admin Metric Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card stat-card shadow-sm border-0 border-start border-4 border-primary">
+            <div class="text-muted small fw-semibold">Faol o‘quvchilar</div>
+            <div class="fs-3 fw-bold text-dark mt-2">{{ metrics.active_students_count }}</div>
+            <div class="text-muted small mt-1">Ro'yxatdagi o'quvchilar</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card stat-card shadow-sm border-0 border-start border-4 border-info">
+            <div class="text-muted small fw-semibold">Faol guruhlar</div>
+            <div class="fs-3 fw-bold text-dark mt-2">{{ metrics.active_groups_count }}</div>
+            <div class="text-muted small mt-1">Mashg'ulotlar o'tilmoqda</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card stat-card shadow-sm border-0 border-start border-4 border-warning">
+            <div class="text-muted small fw-semibold">Bugungi darslar</div>
+            <div class="fs-3 fw-bold text-warning mt-2">{{ today_lessons.count }}</div>
+            <div class="text-muted small mt-1">Davomat belgilanishi lozim</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card stat-card shadow-sm border-0 border-start border-4 border-danger">
+            <div class="text-muted small fw-semibold">Qarzdor o'quvchilar</div>
+            <div class="fs-3 fw-bold text-danger mt-2">{{ debtors_attention|length }}</div>
+            <div class="text-muted small mt-1">Eslatma yuborish lozim</div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Work Desk: Today's Lessons & Attention Debtors -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-calendar-event text-primary me-2"></i>Bugungi darslar jadvali</h6>
+                <a href="{% url 'attendance:lessons_list' %}" class="btn btn-sm btn-light">Barcha darslar</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Vaqt</th>
+                                <th>Guruh</th>
+                                <th>O'qituvchi</th>
+                                <th class="text-end">Davomat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lesson in today_lessons %}
+                            <tr>
+                                <td class="fw-bold">{{ lesson.starts_at|time:"H:i" }}</td>
+                                <td>{{ lesson.group.name }}</td>
+                                <td>{{ lesson.group.teacher.full_name }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'attendance:lesson_attendance' lesson.id %}" class="btn btn-sm btn-outline-success">
+                                        Davomatni belgilash
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted small">
+                                    Bugunga rejalashtirilgan darslar yo'q.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-danger"><i class="bi bi-exclamation-circle me-2"></i>To'lov eslatmasi talab etiladiganlar</h6>
+                <a href="{% url 'billing:debtors_list' %}" class="btn btn-sm btn-outline-danger">Barcha qarzdorlar</a>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for debtor in debtors_attention %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <a href="{% url 'students:student_detail' debtor.student.id %}" class="fw-bold text-decoration-none text-dark">
+                                {{ debtor.student.full_name }}
+                            </a>
+                            <div class="text-muted small">
+                                <i class="bi bi-telephone me-1"></i> {{ debtor.student.phone }} ({{ debtor.active_groups }})
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-danger">{{ debtor.total_debt|uzs }}</div>
+                            <a href="{% url 'billing:student_payment_create' debtor.student.id %}" class="btn btn-sm btn-outline-success py-0 px-2 mt-1" style="font-size: 0.75rem;">
+                                To'lov olish
+                            </a>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-center py-4 text-muted small">
+                        Hozircha qarzdorlar yo'q.
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+{% if is_owner %}
+<script>
+    const ctx = document.getElementById('cashFlowChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ chart_labels|safe }},
+                datasets: [
+                    {
+                        label: 'Kassa tushumi (Kirim)',
+                        data: {{ chart_inflows|safe }},
+                        backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Xarajat va Maoshlar (Chiqim)',
+                        data: {{ chart_outflows|safe }},
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(val) { return val.toLocaleString() + " so'm"; }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endif %}
+{% endblock %}

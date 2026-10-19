@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Hisobotlar Markazi{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">Hisobotlar markazi</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">
+            <i class="bi bi-pie-chart text-primary me-2"></i>Hisobotlar Markazi
+        </h3>
+        <p class="text-muted mb-0 small">Barcha moliyaviy, o‘quv va boshqaruv tahlillarini bitta joydan qulay ko‘ring va yuklab oling.</p>
+    </div>
+
+    <!-- Period Filter -->
+    <form method="get" class="d-flex align-items-center gap-2 bg-white p-2 rounded border shadow-sm">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-calendar"></i></span>
+            <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="form-control border-start-0" required>
+        </div>
+        <span class="text-muted small">—</span>
+        <div class="input-group input-group-sm">
+            <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary px-3">
+            <i class="bi bi-filter"></i> Filtrlash
+        </button>
+    </form>
+</div>
+
+<!-- Summary Quick Stats Banner -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 bg-primary-subtle text-primary p-3 shadow-sm rounded-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small fw-semibold">Jami to‘lovlar (Kirim)</span>
+                <i class="bi bi-arrow-down-left-circle-fill fs-4 text-primary"></i>
+            </div>
+            <h4 class="fw-bold mb-0 text-primary">{{ payments_total|uzs }}</h4>
+            <span class="text-muted small mt-1" style="font-size: 0.75rem;">Tanlangan davr uchun</span>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 bg-info-subtle text-info p-3 shadow-sm rounded-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small fw-semibold text-info-emphasis">Hisoblangan to‘lovlar</span>
+                <i class="bi bi-receipt fs-4 text-info"></i>
+            </div>
+            <h4 class="fw-bold mb-0 text-info-emphasis">{{ charges_total|uzs }}</h4>
+            <span class="text-muted small mt-1" style="font-size: 0.75rem;">O‘quvchilarga chiqarilgan</span>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 bg-warning-subtle text-warning-emphasis p-3 shadow-sm rounded-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small fw-semibold">Umumiy qarzdorlik</span>
+                <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+            </div>
+            <h4 class="fw-bold mb-0 text-warning-emphasis">{{ total_debt|uzs }}</h4>
+            <span class="text-muted small mt-1" style="font-size: 0.75rem;">{{ debtors_count }} nafar qarzdor o‘quvchi</span>
+        </div>
+    </div>
+
+    {% if is_owner %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 {% if net_cash >= 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} p-3 shadow-sm rounded-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small fw-semibold">Sof kassa oqimi</span>
+                <i class="bi bi-wallet2 fs-4"></i>
+            </div>
+            <h4 class="fw-bold mb-0">{{ net_cash|uzs }}</h4>
+            <span class="text-muted small mt-1" style="font-size: 0.75rem;">Kirim - (Xarajat + Maosh)</span>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 bg-light p-3 shadow-sm rounded-3 text-secondary">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small fw-semibold">Davomat monitoringi</span>
+                <i class="bi bi-calendar2-check-fill fs-4 text-secondary"></i>
+            </div>
+            <h5 class="fw-bold mb-0">Faol darslar</h5>
+            <span class="text-muted small mt-1" style="font-size: 0.75rem;">Kundalik jurnallar</span>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Report Categories Grid -->
+<div class="row g-4">
+    <!-- Category 1: Kassa va To'lovlar -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="fw-bold mb-0 text-primary">
+                    <i class="bi bi-cash-stack me-2"></i>Kassa va to‘lovlar hisobotlari
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <!-- Payments Report -->
+                    <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-primary-subtle text-primary p-2 rounded-3">
+                                <i class="bi bi-credit-card fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">To‘lovlar hisoboti</h6>
+                                <p class="text-muted small mb-0">Barcha qabul qilingan naqd, karta va bank to‘lovlari reestri.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'reporting:payments' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-primary">
+                                Ko‘rish
+                            </a>
+                            <a href="{% url 'reporting:export_report' 'payments' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&format=excel" class="btn btn-sm btn-light border text-success" title="Excel yuklash">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Debtors Report -->
+                    <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-warning-subtle text-warning p-2 rounded-3">
+                                <i class="bi bi-exclamation-octagon fs-4 text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Qarzdorlar hisoboti</h6>
+                                <p class="text-muted small mb-0">To‘lovi kechikkan o‘quvchilar ro‘yxati, telefon raqamlari va qarzlari.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'reporting:debtors' %}" class="btn btn-sm btn-outline-warning text-dark">
+                                Ko‘rish
+                            </a>
+                            <a href="{% url 'reporting:export_report' 'debtors' %}?format=excel" class="btn btn-sm btn-light border text-success" title="Excel yuklash">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    {% if is_owner %}
+                    <!-- Cash Flow Report -->
+                    <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-info-subtle text-info p-2 rounded-3">
+                                <i class="bi bi-arrow-left-right fs-4 text-info"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Pul oqimi (Cash Flow)</h6>
+                                <p class="text-muted small mb-0">Haqiqiy kassa tushumlari va chiqimlari, naqd va bank qoldiqlari.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'reporting:cash_flow' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-info text-dark">
+                                Ko‘rish
+                            </a>
+                            <a href="{% url 'reporting:export_report' 'cash_flow' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&format=excel" class="btn btn-sm btn-light border text-success" title="Excel yuklash">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Expenses Report -->
+                    <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-danger-subtle text-danger p-2 rounded-3">
+                                <i class="bi bi-cart-x fs-4 text-danger"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Xarajatlar tahlili</h6>
+                                <p class="text-muted small mb-0">Ijara, kommunal, reklama va boshqa operatsion xarajatlar.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'reporting:expenses' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-danger">
+                                Ko‘rish
+                            </a>
+                            <a href="{% url 'reporting:export_report' 'expenses' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&format=excel" class="btn btn-sm btn-light border text-success" title="Excel yuklash">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category 2: O'quv jarayoni va Foyda -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="fw-bold mb-0 text-success">
+                    <i class="bi bi-mortarboard me-2"></i>O‘quv va boshqaruv hisobotlari
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <!-- Charges Report -->
+                    <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-secondary-subtle text-secondary p-2 rounded-3">
+                                <i class="bi bi-file-earmark-text fs-4 text-secondary"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Oylik hisoblar (Charges)</h6>
+                                <p class="text-muted small mb-0">O‘quvchilarga chiqarilgan barcha oylik hisob-kitoblar holati.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'reporting:charges' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-secondary">
+                                Ko‘rish
+                            </a>
+                            <a href="{% url 'reporting:export_report' 'charges' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&format=excel" class="btn btn-sm btn-light border text-success" title="Excel yuklash">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Report -->
+                    <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-primary-subtle text-primary p-2 rounded-3">
+                                <i class="bi bi-calendar-check fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Davomat tahlili</h6>
+                                <p class="text-muted small mb-0">Darslarga qatnashish foizi, qoldirishlar va kechikishlar statistikasi.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'reporting:attendance' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-primary">
+                                Ko‘rish
+                            </a>
+                        </div>
+                    </div>
+
+                    {% if is_owner %}
+                    <!-- Accrual Profit -->
+                    <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-success-subtle text-success p-2 rounded-3">
+                                <i class="bi bi-graph-up-arrow fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Hisoblangan foyda (Accrual P&L)</h6>
+                                <p class="text-muted small mb-0">Haqiqiy ta'lim daromadlari, xarajatlar va sof foyda hisob-kitobi.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'reporting:accrual_profit' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-success">
+                                Ko‘rish
+                            </a>
+                            <a href="{% url 'reporting:export_report' 'accrual_profit' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&format=excel" class="btn btn-sm btn-light border text-success" title="Excel yuklash">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Group Revenue -->
+                    <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-warning-subtle text-warning-emphasis p-2 rounded-3">
+                                <i class="bi bi-diagram-3 fs-4 text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Guruhlar daromadliligi</h6>
+                                <p class="text-muted small mb-0">Har bir o‘quv guruhi bo‘yicha to‘lovlar yig‘imi va rentabellik.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'reporting:group_revenue' %}" class="btn btn-sm btn-outline-warning text-dark">
+                                Ko‘rish
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Payroll Report -->
+                    <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-info-subtle text-info p-2 rounded-3">
+                                <i class="bi bi-people-fill fs-4 text-info"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Ish haqi hisoboti (Payroll)</h6>
+                                <p class="text-muted small mb-0">O‘qituvchilarga hisoblangan va to‘langan ish haqlari ro‘yxati.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'reporting:payroll' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-info text-dark">
+                                Ko‘rish
+                            </a>
+                            <a href="{% url 'reporting:export_report' 'payroll' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&format=excel" class="btn btn-sm btn-light border text-success" title="Excel yuklash">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+Django>=6.0,<7.0
+psycopg[binary]>=3.2.0
+openpyxl>=3.1.5
+python-dotenv>=1.0.0
+reportlab>=4.0.0
+pytest>=8.0.0
+pytest-django>=4.9.0
+gunicorn>=23.0.0
+whitenoise>=6.8.0
+dj-database-url>=2.3.0

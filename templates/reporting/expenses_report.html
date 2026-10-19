@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Xarajatlar tahlili hisoboti{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Hisobotlar</a></li>
+    <li class="breadcrumb-item active">Xarajatlar tahlili</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Xarajatlar tahlili</h4>
+        <p class="text-muted small mb-0">Toifalar va davrlar bo'yicha operatsion xarajatlar taqsimoti</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="form-control" placeholder="Boshlanish">
+            </div>
+            <div class="col-md-5">
+                <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="form-control" placeholder="Tugash">
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrlash</button>
+                <a href="{% url 'reporting:expenses' %}" class="btn btn-light"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0">Toifalar bo'yicha jami</h6>
+                <span class="fs-5 fw-bold text-danger">{{ total_amount|uzs }}</span>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for cat in category_summary %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <div class="fw-bold">{{ cat.name }}</div>
+                            <div class="text-muted small">{{ cat.count }} ta operatsiya</div>
+                        </div>
+                        <span class="fw-bold text-dark">{{ cat.total|uzs }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-center py-4 text-muted small">Xarajatlar mavjud emas.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0">Davrdagi operatsiyalar</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Sana</th>
+                                <th>Toifa</th>
+                                <th>Tavsif</th>
+                                <th>Summa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in expenses %}
+                            <tr>
+                                <td>{{ e.occurred_at|date:"Y-m-d" }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ e.get_category_display }}</span></td>
+                                <td>{{ e.description }}</td>
+                                <td class="fw-bold text-danger">{{ e.amount|uzs }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center py-4 text-muted">Xarajatlar yo'q.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

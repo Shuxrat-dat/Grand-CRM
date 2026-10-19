@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}{{ student.full_name }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'students:students_list' %}">O‘quvchilar</a></li>
+    <li class="breadcrumb-item active">{{ student.full_name }}</li>
+{% endblock %}
+
+{% block content %}
+<!-- Student Header & Financial Highlights -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h4 class="fw-bold mb-0">{{ student.full_name }}</h4>
+                    {{ student.status|status_badge }}
+                </div>
+                <div class="text-muted small d-flex flex-wrap gap-3 mt-2">
+                    <span><i class="bi bi-telephone me-1"></i> {{ student.phone }}</span>
+                    {% if student.parent_phone %}
+                        <span><i class="bi bi-people me-1"></i> Ota-onasi: {{ student.parent_phone }}</span>
+                    {% endif %}
+                    <span><i class="bi bi-calendar-event me-1"></i> Qo'shilgan: {{ student.joined_at|date:"Y-m-d" }}</span>
+                </div>
+                {% if student.notes %}
+                    <div class="alert alert-light border small mt-3 mb-0">
+                        <i class="bi bi-info-circle me-1 text-primary"></i> <strong>Izoh:</strong> {{ student.notes }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Action buttons -->
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'billing:student_payment_create' student.id %}" class="btn btn-success">
+                    <i class="bi bi-cash-coin me-1"></i> To‘lov qabul qilish
+                </a>
+                <a href="{% url 'academics:enroll_student' %}?student={{ student.id }}" class="btn btn-outline-primary">
+                    <i class="bi bi-plus-circle me-1"></i> Guruhga a'zo qilish
+                </a>
+                <a href="{% url 'students:student_edit' student.id %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-pencil me-1"></i> Tahrirlash
+                </a>
+                {% if student.status != 'archived' %}
+                    <form method="post" action="{% url 'students:student_archive' student.id %}" class="d-inline" onsubmit="return confirm('O\'quvchini arxivga o\'tkazmoqchimisiz?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-archive me-1"></i> Arxivlash
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="post" action="{% url 'students:student_restore' student.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-success">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Faollashtirish
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 4 Financial Balance Metric Cards -->
+        <div class="row g-3 mt-3 pt-3 border-top">
+            <div class="col-sm-6 col-lg-3">
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="text-muted small">Jami hisoblangan:</div>
+                    <div class="fs-5 fw-bold text-dark">{{ student.total_charged|uzs }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="text-muted small">Faqat to‘langan summa:</div>
+                    <div class="fs-5 fw-bold text-success">{{ student.total_payments_received|uzs }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="text-muted small">Hozirgi qarzdorlik:</div>
+                    <div class="fs-5 fw-bold {% if student.total_debt > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ student.total_debt|uzs }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="text-muted small">Oldindan to'lov (Depozit):</div>
+                    <div class="fs-5 fw-bold text-primary">{{ student.prepayment_balance|uzs }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for Enrollments, Charges, Payments, Attendance -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom p-0">
+        <ul class="nav nav-tabs border-0" id="studentTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active px-4 py-3 fw-semibold" id="enrollments-tab" data-bs-toggle="tab" data-bs-target="#enrollments-pane" type="button" role="tab">
+                    <i class="bi bi-collection me-1"></i> Guruhlar ({{ enrollments.count }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-3 fw-semibold" id="charges-tab" data-bs-toggle="tab" data-bs-target="#charges-pane" type="button" role="tab">
+                    <i class="bi bi-receipt me-1"></i> Oylik hisoblar ({{ charges.count }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-3 fw-semibold" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments-pane" type="button" role="tab">
+                    <i class="bi bi-cash-stack me-1"></i> To‘lovlar tarixi ({{ payments.count }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-3 fw-semibold" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance-pane" type="button" role="tab">
+                    <i class="bi bi-calendar-check me-1"></i> Davomat jurnali
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body p-0">
+        <div class="tab-content" id="studentTabsContent">
+            <!-- 1. Enrollments Tab -->
+            <div class="tab-pane fade show active p-3" id="enrollments-pane" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Guruh</th>
+                                <th>Kurs</th>
+                                <th>O‘qituvchi</th>
+                                <th>Kelishilgan oylik narx</th>
+                                <th>Boshlangan sana</th>
+                                <th>Tugash sanasi</th>
+                                <th>Holati</th>
+                                <th class="text-end">Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for enr in enrollments %}
+                            <tr>
+                                <td class="fw-bold">
+                                    <a href="{% url 'academics:group_detail' enr.group.id %}" class="text-decoration-none">
+                                        {{ enr.group.name }}
+                                    </a>
+                                </td>
+                                <td>{{ enr.group.course.name }}</td>
+                                <td>{{ enr.group.teacher.full_name }}</td>
+                                <td class="fw-semibold text-primary">{{ enr.monthly_price|uzs }}</td>
+                                <td>{{ enr.start_date|date:"Y-m-d" }}</td>
+                                <td>{{ enr.end_date|date:"Y-m-d"|default:"-" }}</td>
+                                <td>{{ enr.status|status_badge }}</td>
+                                <td class="text-end">
+                                    {% if enr.status == 'active' %}
+                                        <div class="d-flex justify-content-end gap-1">
+                                            <a href="{% url 'academics:transfer_student' enr.id %}" class="btn btn-sm btn-outline-info" title="Boshqa guruhga ko'chirish">
+                                                <i class="bi bi-arrow-left-right me-1"></i> Ko'chirish
+                                            </a>
+                                            <form method="post" action="{% url 'academics:drop_student' enr.id %}" onsubmit="return confirm('O\'quvchining a\'zoligini to\'xtatmoqchimisiz?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Guruhdan chiqarish">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">A'zoliklar mavjud emas.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. Charges Tab -->
+            <div class="tab-pane fade p-3" id="charges-pane" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Hisob oyi</th>
+                                <th>Guruh</th>
+                                <th>Hisoblangan</th>
+                                <th>Qoplangan</th>
+                                <th>Qoldiq qarz</th>
+                                <th>Muddati</th>
+                                <th>Holati</th>
+                                <th class="text-end">Amal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in charges %}
+                            <tr>
+                                <td class="fw-bold">{{ c.billing_month|date:"Y-m" }}</td>
+                                <td>{{ c.enrollment.group.name }}</td>
+                                <td>{{ c.amount|uzs }}</td>
+                                <td class="text-success">{{ c.allocated_amount|uzs }}</td>
+                                <td>
+                                    {% if c.remaining_balance > 0 %}
+                                        <span class="text-danger fw-bold">{{ c.remaining_balance|uzs }}</span>
+                                    {% else %}
+                                        <span class="text-muted">0 so'm</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ c.due_date|date:"Y-m-d" }}</td>
+                                <td>{{ c.status|status_badge }}</td>
+                                <td class="text-end">
+                                    {% if c.status != 'cancelled' %}
+                                        <a href="{% url 'billing:charge_cancel' c.id %}" class="btn btn-sm btn-outline-danger" title="Hisobni bekor qilish">
+                                            Bekor qilish
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">Oylik hisoblar mavjud emas.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. Payments Tab -->
+            <div class="tab-pane fade p-3" id="payments-pane" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Summa</th>
+                                <th>To'lov usuli</th>
+                                <th>To'langan vaqt</th>
+                                <th>Kvitansiya / Chek</th>
+                                <th>Taqsimlangan</th>
+                                <th>Erkin qoldiq</th>
+                                <th>Holati</th>
+                                <th class="text-end">Amal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in payments %}
+                            <tr>
+                                <td>#{{ p.id }}</td>
+                                <td class="fw-bold text-success">{{ p.amount|uzs }}</td>
+                                <td>{{ p.get_method_display }}</td>
+                                <td>{{ p.paid_at|date:"Y-m-d H:i" }}</td>
+                                <td>{{ p.reference|default:"-" }}</td>
+                                <td>{{ p.allocated_amount|uzs }}</td>
+                                <td>
+                                    {% if p.unallocated_amount > 0 %}
+                                        <span class="badge bg-primary">{{ p.unallocated_amount|uzs }}</span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ p.status|status_badge }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'billing:payment_detail' p.id %}" class="btn btn-sm btn-outline-primary" title="Batafsil">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4 text-muted">To'lovlar mavjud emas.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. Attendance Tab -->
+            <div class="tab-pane fade p-3" id="attendance-pane" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Dars sanasi</th>
+                                <th>Guruh</th>
+                                <th>Vaqti</th>
+                                <th>Davomat holati</th>
+                                <th>Qayd / Izoh</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for att in attendances %}
+                            <tr>
+                                <td>{{ att.lesson.date|date:"Y-m-d" }}</td>
+                                <td>{{ att.lesson.group.name }}</td>
+                                <td>{{ att.lesson.starts_at|time:"H:i" }} - {{ att.lesson.ends_at|time:"H:i" }}</td>
+                                <td>{{ att.status|status_badge }}</td>
+                                <td>{{ att.notes|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">Davomat yozuvlari topilmadi.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

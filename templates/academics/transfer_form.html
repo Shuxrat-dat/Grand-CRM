@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}O'quvchini boshqa guruhga ko'chirish{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'students:student_detail' student.id %}">{{ student.full_name }}</a></li>
+    <li class="breadcrumb-item active">Guruhni ko'chirish</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0"><i class="bi bi-arrow-left-right text-primary me-2"></i>Guruhni o'zgartirish (Ko'chirish)</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-light border mb-4">
+                    <div class="fw-bold text-dark">{{ student.full_name }}</div>
+                    <div class="small text-muted">Joriy guruhi: <strong>{{ current_enrollment.group.name }}</strong> ({{ current_enrollment.monthly_price|uzs }})</div>
+                    <div class="small text-muted">A'zolik boshlangan: {{ current_enrollment.start_date|date:"Y-m-d" }}</div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Ko'chirilayotgan yangi guruh <span class="text-danger">*</span></label>
+                            {{ form.new_group }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Ko'chirish sanasi <span class="text-danger">*</span></label>
+                            {{ form.transfer_date }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Yangi kelishilgan narx (so'm)</label>
+                            {{ form.new_monthly_price }}
+                            <small class="text-muted">Bo'sh qoldirilsa yangi guruh narxi olinadi</small>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info small mt-4 mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Eski guruhdagi a'zolik holati <strong>Ko'chirilgan</strong> qilinadi va tarix to'liq saqlanadi.
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'students:student_detail' student.id %}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-primary px-4">Ko'chirishni tasdiqlash</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

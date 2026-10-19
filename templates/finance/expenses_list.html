@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Xarajatlar{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Xarajatlar</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark"><i class="bi bi-cart-x-fill text-danger me-2"></i>Operatsion xarajatlar</h4>
+        <p class="text-muted small mb-0">Ijara, kommunal xizmatlar, marketing va markazning boshqa xarajatlari (Faqat Ega uchun)</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'reporting:export_report' 'expenses' %}?format=excel" class="btn btn-outline-success">
+            <i class="bi bi-file-earmark-excel me-1"></i> Excel eksport
+        </a>
+        <a href="{% url 'finance:expense_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Yangi xarajat kiritish
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">Barcha toifalar</option>
+                    {% for code, label in category_choices %}
+                        <option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="start_date" value="{{ start_date }}" class="form-control" placeholder="Boshlanish">
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="end_date" value="{{ end_date }}" class="form-control" placeholder="Tugash">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Filtrlash
+                </button>
+                <a href="{% url 'finance:expenses_list' %}" class="btn btn-light" title="Tozalash">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Expenses Table -->
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Toifa</th>
+                    <th>Tavsif / Maqsad</th>
+                    <th>Summa</th>
+                    <th>To‘lov usuli</th>
+                    <th>Kiritgan</th>
+                    <th>Holati</th>
+                    <th class="text-end">Amal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exp in expenses %}
+                <tr>
+                    <td>{{ exp.occurred_at|date:"Y-m-d" }}</td>
+                    <td>
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                            {{ exp.get_category_display }}
+                        </span>
+                    </td>
+                    <td class="fw-semibold text-dark">{{ exp.description }}</td>
+                    <td class="fw-bold text-danger">{{ exp.amount|uzs }}</td>
+                    <td>{{ exp.get_method_display }}</td>
+                    <td class="small text-muted">{{ exp.created_by.username|default:"-" }}</td>
+                    <td>{{ exp.status|status_badge }}</td>
+                    <td class="text-end">
+                        {% if exp.status == 'active' %}
+                            <a href="{% url 'finance:expense_cancel' exp.id %}" class="btn btn-sm btn-outline-danger" title="Bekor qilish">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">Xarajatlar topilmadi.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Kurslar{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Kurslar</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">O‘quv kurslari</h4>
+        <p class="text-muted small mb-0">O'quv markazidagi mavjud yo'nalishlar va standart narxlar</p>
+    </div>
+    {% if is_owner %}
+    <a href="{% url 'academics:course_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Yangi kurs yaratish
+    </a>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+    {% for course in courses %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="fw-bold mb-0 text-dark">{{ course.name }}</h5>
+                        {% if course.is_active %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Faol</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Nofaol</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted small mb-3">{{ course.description|default:"Tavsif kiritilmagan."|truncatechars:100 }}</p>
+                </div>
+
+                <div class="pt-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small">Oylik standart narx:</span>
+                        <span class="fw-bold fs-5 text-primary">{{ course.default_monthly_price|uzs }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted small">Davomiyligi:</span>
+                        <span class="fw-semibold">{{ course.duration_months }} oy</span>
+                    </div>
+
+                    {% if is_owner %}
+                    <div class="d-flex justify-content-end">
+                        <a href="{% url 'academics:course_edit' course.id %}" class="btn btn-sm btn-outline-secondary w-100">
+                            <i class="bi bi-pencil me-1"></i> Tahrirlash
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 text-muted">
+        <i class="bi bi-journal-x fs-1 d-block mb-2 text-secondary"></i>
+        Kurslar mavjud emas.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}To'lov cheki #{{ payment.id }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'billing:payments_list' %}">To‘lovlar</a></li>
+    <li class="breadcrumb-item active">Chek #{{ payment.id }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-receipt text-primary me-2"></i>To'lov Kvitansiyasi #{{ payment.id }}</h5>
+                <div>{{ payment.status|status_badge }}</div>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <div class="text-muted small">O'quvchi:</div>
+                        <h5 class="fw-bold mb-1">
+                            <a href="{% url 'students:student_detail' payment.student.id %}" class="text-decoration-none text-dark">
+                                {{ payment.student.full_name }}
+                            </a>
+                        </h5>
+                        <div class="text-muted small">{{ payment.student.phone }}</div>
+                    </div>
+                    <div class="col-sm-6 text-sm-end">
+                        <div class="text-muted small">To'lov summasi:</div>
+                        <h4 class="fw-bold text-success mb-1">{{ payment.amount|uzs }}</h4>
+                        <div class="text-muted small">{{ payment.get_method_display }}</div>
+                    </div>
+                </div>
+
+                <div class="bg-light p-3 rounded-3 mb-4 small">
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <span class="text-muted">To'langan sana:</span> <strong>{{ payment.paid_at|date:"Y-m-d H:i" }}</strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted">Kvitansiya / Hujjat:</span> <strong>{{ payment.reference|default:"Mavjud emas" }}</strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted">Qabul qilgan xodim:</span> <strong>{{ payment.created_by.username|default:"Tizim" }}</strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted">Erkin depozit:</span> <strong class="text-primary">{{ payment.unallocated_amount|uzs }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Allocations table -->
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-diagram-3 me-2 text-primary"></i>Ushbu to'lov qoplagan hisoblar (Allocations)</h6>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Hisob oyi</th>
+                                <th>Guruh</th>
+                                <th>Hisob summasi</th>
+                                <th>Ushbu to'lovdan yopilgan</th>
+                                <th>Hisob holati</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alloc in allocations %}
+                            <tr>
+                                <td class="fw-semibold">{{ alloc.charge.billing_month|date:"Y-m" }}</td>
+                                <td>{{ alloc.charge.enrollment.group.name }}</td>
+                                <td>{{ alloc.charge.amount|uzs }}</td>
+                                <td class="fw-bold text-success">{{ alloc.amount|uzs }}</td>
+                                <td>{{ alloc.charge.status|status_badge }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-muted">
+                                    Hisoblar bilan bog'lanmagan (to'liq depozit / oldindan to'lov holatida).
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if payment.status == 'cancelled' %}
+                    <div class="alert alert-danger small mb-0">
+                        <i class="bi bi-x-octagon me-1"></i>
+                        <strong>To'lov bekor qilingan (Storno):</strong> {{ payment.cancellation_reason }}
+                        <div class="mt-1 text-muted">Bekor qilingan vaqt: {{ payment.cancelled_at|date:"Y-m-d H:i" }}</div>
+                    </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                    <a href="{% url 'billing:payments_list' %}" class="btn btn-light">
+                        <i class="bi bi-arrow-left me-1"></i> Ro'yxatga qaytish
+                    </a>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                            <i class="bi bi-printer me-1"></i> Chop etish
+                        </button>
+                        {% if payment.status == 'completed' %}
+                            <a href="{% url 'billing:payment_cancel' payment.id %}" class="btn btn-outline-danger">
+                                <i class="bi bi-x-circle me-1"></i> Bekor qilish (Storno)
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

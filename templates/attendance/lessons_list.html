@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Davomat va Darslar{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Davomat</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Darslar va Davomat jurnali</h4>
+        <p class="text-muted small mb-0">Rejalashtirilgan va o'tilgan darslar ro'yxati</p>
+    </div>
+    <a href="{% url 'attendance:lesson_create' %}" class="btn btn-primary">
+        <i class="bi bi-calendar-plus-fill me-1"></i> Yangi dars belgilash
+    </a>
+</div>
+
+<!-- Filter card -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <select name="group" class="form-select">
+                    <option value="">Barcha guruhlar</option>
+                    {% for g in groups %}
+                        <option value="{{ g.id }}" {% if selected_group == g.id|stringformat:"s" %}selected{% endif %}>{{ g.name }} ({{ g.course.name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="date" name="date" value="{{ selected_date }}" class="form-control" placeholder="Dars sanasi">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Filtrlash
+                </button>
+                <a href="{% url 'attendance:lessons_list' %}" class="btn btn-light" title="Tozalash">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lessons table -->
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Vaqti</th>
+                    <th>Guruh</th>
+                    <th>O‘qituvchi</th>
+                    <th>Dars mavzusi</th>
+                    <th>Davomat</th>
+                    <th>Holati</th>
+                    <th class="text-end">Amal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lesson in lessons %}
+                <tr>
+                    <td class="fw-bold text-dark">{{ lesson.date|date:"Y-m-d" }}</td>
+                    <td>{{ lesson.starts_at|time:"H:i" }} - {{ lesson.ends_at|time:"H:i" }}</td>
+                    <td>
+                        <a href="{% url 'academics:group_detail' lesson.group.id %}" class="fw-semibold text-decoration-none">
+                            {{ lesson.group.name }}
+                        </a>
+                    </td>
+                    <td>{{ lesson.group.teacher.full_name }}</td>
+                    <td>{{ lesson.topic|default:"-" }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ lesson.attendances.count }} nafar</span>
+                    </td>
+                    <td>
+                        {% if lesson.status == 'completed' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">O'tildi</span>
+                        {% elif lesson.status == 'cancelled' %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Bekor qilindi</span>
+                        {% else %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Rejalashtirilgan</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'attendance:lesson_attendance' lesson.id %}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-check2-square me-1"></i> Davomat jurnali
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-calendar-x fs-1 d-block mb-2 text-secondary"></i>
+                        Darslar topilmadi.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

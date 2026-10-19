@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}{{ group.name }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'academics:groups_list' %}">Guruhlar</a></li>
+    <li class="breadcrumb-item active">{{ group.name }}</li>
+{% endblock %}
+
+{% block content %}
+<!-- Group Header -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h4 class="fw-bold mb-0">{{ group.name }}</h4>
+                    {% if group.is_active %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Faol guruh</span>
+                    {% else %}
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Yopilgan</span>
+                    {% endif %}
+                </div>
+                <div class="text-muted small d-flex flex-wrap gap-3 mt-2">
+                    <span><i class="bi bi-journal-bookmark me-1"></i> Kurs: <strong>{{ group.course.name }}</strong></span>
+                    <span><i class="bi bi-person-badge me-1"></i> O'qituvchi: <strong>{{ group.teacher.full_name }}</strong></span>
+                    <span><i class="bi bi-calendar me-1"></i> Boshlangan: {{ group.start_date|date:"Y-m-d" }}</span>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'attendance:group_lesson_create' group.id %}" class="btn btn-primary">
+                    <i class="bi bi-calendar-plus me-1"></i> Dars rejalashtirish
+                </a>
+                <a href="{% url 'academics:group_enroll_student' group.id %}" class="btn btn-outline-success">
+                    <i class="bi bi-person-plus me-1"></i> O‘quvchi qo‘shish
+                </a>
+                <a href="{% url 'academics:group_edit' group.id %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-pencil me-1"></i> Tahrirlash
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-3 pt-3 border-top">
+            <div class="col-sm-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="text-muted small">O'quvchilar soni / Sig'im:</div>
+                    <div class="fs-5 fw-bold text-dark">{{ enrollments.count }} / {{ group.capacity }} nafar</div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="text-muted small">Kurs standart narxi:</div>
+                    <div class="fs-5 fw-bold text-primary">{{ group.course.default_monthly_price|uzs }}</div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="text-muted small">O'tkazilgan darslar:</div>
+                    <div class="fs-5 fw-bold text-dark">{{ recent_lessons.count }} ta</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Schedules & Lesson History -->
+    <div class="col-lg-5">
+        <!-- Group Schedules -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-clock text-primary me-2"></i>Dars jadvali</h6>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addScheduleCollapse">
+                    <i class="bi bi-plus-lg me-1"></i> Vaqt qo'shish
+                </button>
+            </div>
+
+            <!-- Add Schedule Form Collapse -->
+            <div class="collapse p-3 bg-light border-bottom" id="addScheduleCollapse">
+                <form method="post" action="{% url 'academics:group_schedule_add' group.id %}">
+                    {% csrf_token %}
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Hafta kuni</label>
+                            {{ schedule_form.weekday }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Boshlanish</label>
+                            {{ schedule_form.start_time }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Tugash</label>
+                            {{ schedule_form.end_time }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Auditoriya / Xona</label>
+                            {{ schedule_form.room }}
+                        </div>
+                        <div class="col-12 mt-3">
+                            <button type="submit" class="btn btn-sm btn-primary w-100">
+                                Jadvalga kiritish (To'qnashuv tekshiriladi)
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for sch in schedules %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <div class="fw-bold text-dark">{{ sch.get_weekday_display }}</div>
+                            <div class="text-muted small">
+                                <i class="bi bi-clock me-1"></i> {{ sch.start_time|time:"H:i" }} - {{ sch.end_time|time:"H:i" }}
+                                {% if sch.room %}| <i class="bi bi-geo-alt me-1"></i> {{ sch.room }}{% endif %}
+                            </div>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Haftalik dars</span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-center py-4 text-muted small">
+                        Dars jadvali belgilanmagan. Yuqoridagi tugma orqali vaqt qo'shing.
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Recent Lessons -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-calendar-check text-success me-2"></i>Darslar va Davomat</h6>
+                <a href="{% url 'attendance:lessons_list' %}?group={{ group.id }}" class="btn btn-sm btn-light">Barchasi</a>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for lesson in recent_lessons %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <div class="fw-bold text-dark">{{ lesson.date|date:"Y-m-d" }} ({{ lesson.starts_at|time:"H:i" }})</div>
+                            <div class="text-muted small">{{ lesson.topic|default:"Mavzu kiritilmagan" }}</div>
+                        </div>
+                        <a href="{% url 'attendance:lesson_attendance' lesson.id %}" class="btn btn-sm btn-outline-success">
+                            Davomat ({{ lesson.attendances.count }})
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-center py-4 text-muted small">Hozircha darslar o'tkazilmagan.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Enrolled Students -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Guruhdagi o‘quvchilar ({{ enrollments.count }})</h6>
+                <a href="{% url 'academics:group_enroll_student' group.id %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-person-plus-fill me-1"></i> O'quvchi qo'shish
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>O‘quvchi F.I.SH.</th>
+                                <th>Telefon</th>
+                                <th>Oylik narxi</th>
+                                <th>Qo‘shilgan sana</th>
+                                <th class="text-end">Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for enr in enrollments %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'students:student_detail' enr.student.id %}" class="fw-bold text-decoration-none text-dark">
+                                        {{ enr.student.full_name }}
+                                    </a>
+                                </td>
+                                <td>{{ enr.student.phone }}</td>
+                                <td class="fw-semibold text-primary">{{ enr.monthly_price|uzs }}</td>
+                                <td>{{ enr.start_date|date:"Y-m-d" }}</td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <a href="{% url 'billing:student_payment_create' enr.student.id %}" class="btn btn-sm btn-outline-success" title="To'lov">
+                                            <i class="bi bi-cash"></i>
+                                        </a>
+                                        <a href="{% url 'academics:transfer_student' enr.id %}" class="btn btn-sm btn-outline-info" title="Boshqa guruhga ko'chirish">
+                                            <i class="bi bi-arrow-left-right"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'academics:drop_student' enr.id %}" onsubmit="return confirm('O\'quvchini ushbu guruhdan chiqarmoqchimisiz?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Guruhdan chiqarish">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-person-x fs-2 d-block mb-2 text-secondary"></i>
+                                    Bu guruhda faol o'quvchilar yo'q.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

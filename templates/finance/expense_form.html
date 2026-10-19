@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'finance:expenses_list' %}">Xarajatlar</a></li>
+    <li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0"><i class="bi bi-cart-x text-danger me-2"></i>{{ title }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Xarajat toifasi <span class="text-danger">*</span></label>
+                            {{ form.category }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Summa (so'm) <span class="text-danger">*</span></label>
+                            {{ form.amount }}
+                            {% if form.amount.errors %}<div class="text-danger small mt-1">{{ form.amount.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Xarajat sanasi <span class="text-danger">*</span></label>
+                            {{ form.occurred_at }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">To'lov usuli <span class="text-danger">*</span></label>
+                            {{ form.method }}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Tavsif / Maqsad <span class="text-danger">*</span></label>
+                            {{ form.description }}
+                            {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'finance:expenses_list' %}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check2-circle me-1"></i> Xarajatni saqlash
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

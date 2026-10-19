@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'payroll:salaries_list' %}">Ish haqi</a></li>
+    <li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0">{{ title }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">O‘qituvchi <span class="text-danger">*</span></label>
+                            {{ form.teacher }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Hisob oyi (oyning 1-sanasi) <span class="text-danger">*</span></label>
+                            {{ form.period_month }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Maxsus oylik summa (so'm)</label>
+                            {{ form.custom_amount }}
+                            <small class="text-muted">Bo'sh qoldirilsa o'qituvchining joriy stavkasi olinadi</small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'payroll:salaries_list' %}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-primary px-4">Maoshni hisoblash</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

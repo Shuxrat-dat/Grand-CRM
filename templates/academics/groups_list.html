@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Guruhlar{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Guruhlar</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">O‘quv guruhlari</h4>
+        <p class="text-muted small mb-0">Faol va rejalashtirilgan o'quv guruhlari ro'yxati</p>
+    </div>
+    <a href="{% url 'academics:group_create' %}" class="btn btn-primary">
+        <i class="bi bi-collection-play-fill me-1"></i> Yangi guruh ochish
+    </a>
+</div>
+
+<div class="row g-4">
+    {% for group in groups %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="fw-bold mb-0">
+                            <a href="{% url 'academics:group_detail' group.id %}" class="text-decoration-none text-dark">
+                                {{ group.name }}
+                            </a>
+                        </h5>
+                        {% if group.is_active %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Faol</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Yopilgan</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-muted small mb-3">
+                        <div><i class="bi bi-journal-bookmark me-1"></i> Kurs: <strong>{{ group.course.name }}</strong></div>
+                        <div><i class="bi bi-person-badge me-1"></i> O'qituvchi: <strong>{{ group.teacher.full_name }}</strong></div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small">O'quvchilar:</span>
+                        <span class="fw-bold fs-6">{{ group.active_students_count }} / {{ group.capacity }} nafar</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted small">Boshlangan sana:</span>
+                        <span class="small">{{ group.start_date|date:"Y-m-d" }}</span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'academics:group_detail' group.id %}" class="btn btn-sm btn-outline-primary w-100">
+                            <i class="bi bi-eye me-1"></i> Guruhga kirish
+                        </a>
+                        <a href="{% url 'academics:group_edit' group.id %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 text-muted">
+        <i class="bi bi-collection fs-1 d-block mb-2 text-secondary"></i>
+        Guruhlar mavjud emas.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

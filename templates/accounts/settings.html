@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Tizim sozlamalari{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Sozlamalar</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0"><i class="bi bi-gear-fill text-primary me-2"></i>Tizim va hisob-kitob sozlamalari</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-semibold">O'quv markazi rasmiy nomi</label>
+                            {{ form.center_name }}
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label small fw-semibold">To'liq bo'lmagan oy siyosati (Proration policy)</label>
+                            {{ form.proration_policy }}
+                            <div class="form-text text-muted small">
+                                O'quvchi oyning o'rtasida guruhga qo'shilganda yoki to'xtatganda qanday hisoblanishini belgilaydi.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Har oylik to'lov muddati (kun)</label>
+                            {{ form.payment_due_day }}
+                            <div class="form-text text-muted small">
+                                Masalan, 5-sana: har oyning 5-kuni o'quvchi to'lov muddati deb belgilanadi.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Valyuta</label>
+                            {{ form.currency }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Markaz telefoni</label>
+                            {{ form.phone }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Manzil</label>
+                            {{ form.address }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'dashboard' %}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check2 me-1"></i> Saqlash
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

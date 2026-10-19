@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'billing:charges_list' %}">Oylik hisoblar</a></li>
+    <li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0">{{ title }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">O'quvchi va guruh a'zoligi <span class="text-danger">*</span></label>
+                            {{ form.enrollment }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Hisob oyi (oyning 1-sanasi) <span class="text-danger">*</span></label>
+                            {{ form.billing_month }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">To'lov muddati (oxirgi kun)</label>
+                            {{ form.due_date }}
+                            <small class="text-muted">Bo'sh qoldirilsa markaz sozlamalaridan olinadi</small>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">To'liq bo'lmagan oy siyosati</label>
+                            {{ form.proration_policy }}
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label small fw-semibold">Maxsus summa (so'm, ixtiyoriy)</label>
+                            {{ form.custom_amount }}
+                            <div class="form-text text-muted small">Bo'sh bo'lsa a'zolikdagi narx va tanlangan siyosat bo'yicha hisoblanadi.</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'billing:charges_list' %}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-primary px-4">Hisobni shakllantirish</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

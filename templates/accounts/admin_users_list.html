@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Xodimlar boshqaruvi{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Xodimlar</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Xodimlar va Administratorlar</h4>
+        <p class="text-muted small mb-0">Tizimga kirish huquqiga ega bo'lgan foydalanuvchilar ro'yxati</p>
+    </div>
+    <a href="{% url 'accounts:admin_user_create' %}" class="btn btn-primary rounded-3">
+        <i class="bi bi-person-plus-fill me-1"></i> Yangi xodim qo'shish
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Foydalanuvchi</th>
+                    <th>F.I.SH.</th>
+                    <th>Roli</th>
+                    <th>Telefon</th>
+                    <th>Elektron pochta</th>
+                    <th>Holati</th>
+                    <th class="text-end">Amallar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td class="fw-semibold">
+                        <i class="bi bi-person-circle me-1 text-secondary"></i> {{ u.username }}
+                    </td>
+                    <td>{{ u.get_full_name|default:"-" }}</td>
+                    <td>
+                        {% if u.role == 'OWNER' or u.is_superuser %}
+                            <span class="badge bg-primary text-white">Ega (Owner)</span>
+                        {% else %}
+                            <span class="badge bg-secondary text-white">Administrator</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.phone|default:"-" }}</td>
+                    <td>{{ u.email|default:"-" }}</td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Faol</span>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Faolsiz</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'accounts:admin_user_edit' u.id %}" class="btn btn-sm btn-outline-primary" title="Tahrirlash">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% if u != request.user %}
+                            <form method="post" action="{% url 'accounts:admin_user_toggle' u.id %}" onsubmit="return confirm('Foydalanuvchi holatini o\'zgartirmoqchimisiz?');">
+                                {% csrf_token %}
+                                {% if u.is_active %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Faolsizlantirish">
+                                        <i class="bi bi-person-slash"></i>
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Faollashtirish">
+                                        <i class="bi bi-person-check"></i>
+                                    </button>
+                                {% endif %}
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">Foydalanuvchilar topilmadi.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'billing:payments_list' %}">To‘lovlar</a></li>
+    <li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0"><i class="bi bi-cash-coin text-success me-2"></i>{{ title }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.idempotency_key }}
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">O‘quvchi <span class="text-danger">*</span></label>
+                            {{ form.student }}
+                            {% if form.student.errors %}<div class="text-danger small mt-1">{{ form.student.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">To‘lov summasi (so'm) <span class="text-danger">*</span></label>
+                            {{ form.amount }}
+                            {% if form.amount.errors %}<div class="text-danger small mt-1">{{ form.amount.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">To‘lov usuli <span class="text-danger">*</span></label>
+                            {{ form.method }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">To‘langan sana va vaqt <span class="text-danger">*</span></label>
+                            {{ form.paid_at }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Kvitansiya / Chek raqami</label>
+                            {{ form.reference }}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Muayyan hisobga yo'naltirish (ixtiyoriy)</label>
+                            {{ form.charge }}
+                            <div class="form-text text-muted small">
+                                Tanlanmasa, to'lov avtomatik ravishda o'quvchining eng eski qarzdorliklariga (FIFO tartibida) taqsimlanadi. Qolgan ortiqcha qismi keyingi hisoblar uchun depozit bo'lib qoladi.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'billing:payments_list' %}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-check2-circle me-1"></i> To‘lovni qabul qilish
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'payroll:salaries_list' %}">Ish haqi</a></li>
+    <li class="breadcrumb-item active">To‘lov</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0"><i class="bi bi-cash-stack text-success me-2"></i>{{ title }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="bg-light p-3 rounded-3 mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">O'qituvchi:</span>
+                        <span class="fw-bold">{{ salary.teacher.full_name }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Hisoblangan maosh:</span>
+                        <span class="fw-semibold">{{ salary.amount|uzs }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Oldin to'langan summa:</span>
+                        <span class="text-success fw-semibold">{{ salary.total_paid|uzs }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between pt-2 border-top">
+                        <span class="text-muted small">To'lanishi kerak qoldiq:</span>
+                        <span class="fw-bold fs-6 text-danger">{{ salary.remaining_balance|uzs }}</span>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">To'lov summasi (so'm) <span class="text-danger">*</span></label>
+                            {{ form.amount }}
+                            {% if form.amount.errors %}<div class="text-danger small mt-1">{{ form.amount.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">To'lov usuli <span class="text-danger">*</span></label>
+                            {{ form.method }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">To'langan sana va vaqt <span class="text-danger">*</span></label>
+                            {{ form.paid_at }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Hujjat / Kvitansiya raqami</label>
+                            {{ form.reference }}
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <div class="form-check">
+                                {{ form.allow_overpay }}
+                                <label class="form-check-label small fw-semibold" for="{{ form.allow_overpay.id_for_label }}">
+                                    Qarzdorlikdan ortiqcha to'lovga ruxsat berish (mukofot / avans)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'payroll:salaries_list' %}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-check2-circle me-1"></i> To'lovni tasdiqlash
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

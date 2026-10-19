@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Qarzdor o‘quvchilar{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'billing:payments_list' %}">Moliya</a></li>
+    <li class="breadcrumb-item active">Qarzdorlar</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Qarzdor o‘quvchilar ro‘yxati</h4>
+        <p class="text-muted small mb-0">To'lov muddati o'tgan yoki to'lanmagan qarzi bor o'quvchilar (Eslatma yuborish uchun)</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'reporting:export_report' 'debtors' %}?format=excel" class="btn btn-outline-success">
+            <i class="bi bi-file-earmark-excel me-1"></i> Excel eksport
+        </a>
+        <a href="{% url 'reporting:export_report' 'debtors' %}?format=pdf" class="btn btn-outline-danger">
+            <i class="bi bi-file-earmark-pdf me-1"></i> PDF yuklash
+        </a>
+    </div>
+</div>
+
+<!-- Alert with total system debt -->
+<div class="card bg-danger bg-opacity-10 border-danger border-opacity-25 shadow-sm mb-4">
+    <div class="card-body p-3 d-flex justify-content-between align-items-center">
+        <div>
+            <div class="text-muted small fw-semibold">Jami markaz bo'yicha undirilishi kerak bo'lgan qarzdorlik:</div>
+            <div class="fs-4 fw-bold text-danger">{{ total_system_debt|uzs }}</div>
+        </div>
+        <div class="text-end">
+            <div class="badge bg-danger fs-6 px-3 py-2">{{ debtors|length }} nafar qarzdor</div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>O‘quvchi</th>
+                    <th>Telefon</th>
+                    <th>Ota-onasi</th>
+                    <th>Guruhlari</th>
+                    <th>Jami hisoblangan</th>
+                    <th>To‘langan</th>
+                    <th>Qarzdorlik miqdori</th>
+                    <th>Muddati o'tgan oylar</th>
+                    <th class="text-end">To‘lov</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in debtors %}
+                <tr>
+                    <td>
+                        <a href="{% url 'students:student_detail' d.student.id %}" class="fw-bold text-decoration-none text-dark">
+                            {{ d.student.full_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="tel:{{ d.student.phone }}" class="text-decoration-none">
+                            <i class="bi bi-telephone-outbound me-1"></i> {{ d.student.phone }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if d.student.parent_phone %}
+                            <a href="tel:{{ d.student.parent_phone }}" class="text-decoration-none text-secondary">
+                                {{ d.student.parent_phone }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="small text-muted">{{ d.active_groups }}</span>
+                    </td>
+                    <td>{{ d.total_charged|uzs }}</td>
+                    <td class="text-success">{{ d.total_paid|uzs }}</td>
+                    <td class="fw-bold fs-6 text-danger">
+                        {{ d.total_debt|uzs }}
+                    </td>
+                    <td>
+                        {% if d.overdue_count > 0 %}
+                            <span class="badge bg-danger">{{ d.overdue_count }} ta oy</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Joriy oy</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'billing:student_payment_create' d.student.id %}" class="btn btn-sm btn-success">
+                            <i class="bi bi-cash me-1"></i> To‘lov
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-5 text-muted">
+                        <i class="bi bi-check-circle-fill fs-1 text-success d-block mb-2"></i>
+                        Ajoyib! Hozirda hech qanday qarzdorlik mavjud emas.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
