@@ -25,7 +25,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         force = options.get('force', False)
-        if Student.objects.count() >= 250 and not force:
+        if Student.objects.count() >= 450 and not force:
             self.stdout.write(self.style.NOTICE(
                 f"Bazadagi real o'quvchilar allaqachon to'liq yuklangan ({Student.objects.count()} ta o'quvchi mavjud). Qayta yuklash o'tkazib yuborildi."
             ))
@@ -757,7 +757,198 @@ class Command(BaseCommand):
             ]:
                 enroll_student(name, phone, g_eng_bahrom_dush, price, reason)
 
-            # 6. Generate lessons for all groups for the current month
+            # 6. BATCH 3 GROUPS (6 New Groups)
+            # Group 17: English (Bobur usta - Dush-Chor-Juma 13:00)
+            g_eng_bobur_dush_1300 = make_group("English (Bobur usta - Dush-Chor-Juma 13:00)", 'english', 'bobur', [
+                (1, datetime.time(13, 0), datetime.time(14, 30), "109-xona"),
+                (3, datetime.time(13, 0), datetime.time(14, 30), "109-xona"),
+                (5, datetime.time(13, 0), datetime.time(14, 30), "109-xona"),
+            ], capacity=35)
+            for name, phone, price, reason in [
+                ("Umarov A.", "90 054 62 53", 400000, ""),
+                ("Toshpo'latov", "90 195 59 32", 400000, ""),
+                ("Xoliqova Z.", "95 078 48 11", 400000, ""),
+                ("Soliyev B.", "70 212 34 09", 400000, ""),
+                ("Hamroyeva Z.", "97 891 04 81", 400000, ""),
+                ("Berdimurodova", "95 757 58 01", 400000, ""),
+                ("Ochilov", "90 507 81 11", 400000, ""),
+                ("Xayrullayev Z.", "95 724 08 21", 400000, ""),
+                ("Muxiddinov Sh.", "77 104 29 81", 400000, ""),
+                ("Asatullayev", "91 705 28 10", 400000, ""),
+                ("Eshonqulova M.", "95 478 95 41", 400000, ""),
+                ("Tuychiyeva L.", "90 282 32 71", 400000, ""),
+                ("Toshov L.", "33 303 70 09", 400000, ""),
+                ("Xoliqova Zarina", "77 217 86 01", 400000, ""),
+                ("Farmonova M.", "94 712 35 41", 400000, ""),
+                ("Abdunabiyeva", "95 889 58 54", 400000, ""),
+                ("Toxirov F.", "94 385 72 90", 400000, ""),
+                ("Samandarova D.", "90 190 18 41", 400000, ""),
+                ("Sayfullayeva", "77 110 01 22", 400000, ""),
+                ("Egamberdiyev", "99 379 27 80", 300000, "Chegirma (300 ming)"),
+                ("Xamidova D.", "50 377 38 68", 400000, ""),
+                ("Hamroyeva", "90 127 05 71", 400000, ""),
+                ("Yodgorov J.", "90 102 14 02", 400000, ""),
+                ("Xoliqulov I.", "95 794 91 22", 400000, ""),
+                ("Abdullayeva", "95 065 32 84", 400000, ""),
+                ("Xalilova M.", "90 473 74 32", 400000, ""),
+                ("Xakimova M.", "90 147 76 26", 400000, ""),
+                ("Mexridinov I.", "90 123 41 51", 400000, ""),
+                ("Shodiyev H.", "90 123 41 52", 400000, ""),
+                ("Abduraxmonov", "90 123 41 53", 400000, ""),
+            ]:
+                enroll_student(name, phone, g_eng_bobur_dush_1300, price, reason)
+
+            # Group 18: English (Bobur usta - Dush-Chor-Juma 13:30)
+            g_eng_bobur_dush_1330 = make_group("English (Bobur usta - Dush-Chor-Juma 13:30)", 'english', 'bobur', [
+                (1, datetime.time(13, 30), datetime.time(15, 0), "110-xona"),
+                (3, datetime.time(13, 30), datetime.time(15, 0), "110-xona"),
+                (5, datetime.time(13, 30), datetime.time(15, 0), "110-xona"),
+            ], capacity=35)
+            for name, phone, price, reason in [
+                ("Hamroyev D.", "94 244 90 04", 400000, ""),
+                ("Ikromova M.", "95 164 25 85", 400000, ""),
+                ("Yuldoshev B.", "95 801 21 00", 400000, ""),
+                ("Qurbonova S.", "93 384 80 10", 400000, ""),
+                ("Mamarajabova", "88 082 88 90", 400000, ""),
+                ("Xalillayeva Z.", "90 123 41 55", 400000, ""),
+                ("Hamidullayeva D.", "95 635 65 26", 400000, ""),
+                ("To'xtamurodov", "94 744 94 81", 400000, ""),
+                ("Nematzoda B.", "93 887 52 80", 400000, ""),
+                ("Abduvohidova", "94 754 10 83", 400000, ""),
+                ("Karimova Z.", "95 865 83 02", 400000, ""),
+                ("Erkinova D.", "77 417 42 00", 400000, ""),
+                ("Raxmanqulova", "91 318 50 09", 400000, ""),
+                ("Xushvaqtov N.", "77 907 07 70", 400000, ""),
+                ("Normatova J.", "91 554 69 29", 400000, ""),
+                ("Normurodov", "95 257 51 09", 400000, ""),
+                ("Yunusov Q.", "55 426 05 03", 400000, ""),
+                ("Berdiyev M.", "99 174 40 42", 400000, ""),
+                ("Toshtemirov A.", "95 089 99 31", 400000, ""),
+                ("Sattorov F.", "50 788 04 05", 400000, ""),
+                ("Xursandov N.", "94 209 02 09", 400000, ""),
+                ("Turg'unboyeva", "77 168 15 99", 400000, ""),
+                ("Saydullayev", "95 487 12 04", 400000, ""),
+                ("Bozorov O.", "77 365 65 21", 400000, ""),
+                ("Hakimova I.", "95 257 02 29", 400000, ""),
+                ("Normurodov Farxod", "90 123 41 56", 400000, ""),
+            ]:
+                enroll_student(name, phone, g_eng_bobur_dush_1330, price, reason)
+
+            # Group 19: English (Bobur usta - Dush-Chor-Juma 08:30)
+            g_eng_bobur_dush_0830 = make_group("English (Bobur usta - Dush-Chor-Juma 08:30)", 'english', 'bobur', [
+                (1, datetime.time(8, 30), datetime.time(10, 0), "109-xona"),
+                (3, datetime.time(8, 30), datetime.time(10, 0), "109-xona"),
+                (5, datetime.time(8, 30), datetime.time(10, 0), "109-xona"),
+            ], capacity=35)
+            for name, phone, price, reason in [
+                ("Husanova", "93 841 86 89", 400000, ""),
+                ("Yoqubova B.", "94 103 10 24", 400000, ""),
+                ("Xoliqova Sh.", "94 476 04 60", 400000, ""),
+                ("Berdiyeva", "94 506 88 42", 400000, ""),
+                ("Hamroyeva M.", "33 447 14 10", 300000, "Chegirma (300 ming)"),
+                ("Mavlonova Z.", "90 453 82 86", 400000, ""),
+                ("Murodmurodov", "95 742 25 09", 400000, ""),
+                ("Xidirova Sh.", "77 524 98 01", 400000, ""),
+                ("Qurbonqulova", "91 299 83 91", 400000, ""),
+                ("Aliqulov M.", "95 100 16 26", 400000, ""),
+                ("Xudoyqulova", "95 450 30 09", 400000, ""),
+                ("Abdusattorova", "94 877 37 36", 400000, ""),
+                ("Abduraximova", "94 030 00 68", 400000, ""),
+                ("Abduraximov B.", "97 104 32 68", 400000, ""),
+                ("Hamdamova S.", "90 281 10 32", 400000, ""),
+                ("Normurodov Sh.", "90 281 10 33", 400000, ""),
+                ("Sheraliyeva", "91 475 87 29", 400000, ""),
+                ("Sultonova", "93 140 01 08", 300000, "Chegirma (300 ming)"),
+                ("Bozorova Sh.", "90 462 79 17", 400000, ""),
+                ("Bozorov Sh.", "95 364 01 99", 400000, ""),
+                ("Yaxshiboyeva", "95 995 99 49", 400000, ""),
+                ("Qurbonov Sh.", "93 871 92 65", 400000, ""),
+                ("To'xtayeva", "90 051 03 11", 400000, ""),
+                ("Shodiyeva", "94 146 02 85", 350000, "Chegirma (350 ming)"),
+                ("Qudratova Sh.", "77 185 09 42", 400000, ""),
+                ("Bozorova D.", "99 050 09 42", 400000, ""),
+                ("Hamroyeva B.", "94 429 01 10", 400000, ""),
+                ("Husanova M.", "94 149 26 20", 400000, ""),
+            ]:
+                enroll_student(name, phone, g_eng_bobur_dush_0830, price, reason)
+
+            # Group 20: English (Bahrom usta - 09:00)
+            g_eng_bahrom_0900 = make_group("English (Bahrom usta - Sesh-Pay-Shan 09:00)", 'english', 'bahrom', [
+                (2, datetime.time(9, 0), datetime.time(10, 30), "108-xona"),
+                (4, datetime.time(9, 0), datetime.time(10, 30), "108-xona"),
+                (6, datetime.time(9, 0), datetime.time(10, 30), "108-xona"),
+            ], capacity=20)
+            for name, phone, price, reason in [
+                ("Mamatkarimova", "99 095 75 02", 400000, ""),
+                ("Muroddinov", "90 123 41 61", 400000, ""),
+                ("Ochilov B.", "94 620 14 14", 400000, ""),
+                ("Qarshiyeva B.", "94 385 04 88", 400000, ""),
+                ("Abdusalomova", "90 123 41 62", 400000, ""),
+                ("Shodiyoyeva J.", "90 123 41 63", 400000, ""),
+                ("Rabbimova", "90 123 41 64", 400000, ""),
+            ]:
+                enroll_student(name, phone, g_eng_bahrom_0900, price, reason)
+
+            # Group 21: Kids English 2 (Aziza)
+            g_kids_aziza_2 = make_group("Kids English 2 (Aziza)", 'kids_english', 'aziza', [
+                (2, datetime.time(14, 0), datetime.time(15, 30), "102-xona"),
+                (4, datetime.time(14, 0), datetime.time(15, 30), "102-xona"),
+                (6, datetime.time(14, 0), datetime.time(15, 30), "102-xona"),
+            ], capacity=20)
+            for name, phone, price, reason in [
+                ("Mirzayeva S.", "90 123 41 71", 210000, "Maxsus imtiyoz (210 ming)"),
+                ("Jumanova M.", "90 123 41 72", 400000, ""),
+                ("Boboqulova S.", "90 123 41 73", 400000, ""),
+                ("Ergasheva Sh.", "90 123 41 74", 400000, ""),
+                ("Qurbonov F.", "90 123 41 75", 400000, ""),
+                ("Norboyev Y.", "90 123 41 76", 400000, ""),
+                ("Xayrullayev", "90 123 41 77", 400000, ""),
+                ("Xamroyeva", "90 123 41 78", 400000, ""),
+                ("Normurodov", "90 123 41 79", 400000, ""),
+                ("Ergasheva M.", "90 123 41 80", 400000, ""),
+                ("Toshpo'latov F.", "90 123 41 81", 400000, ""),
+            ]:
+                enroll_student(name, phone, g_kids_aziza_2, price, reason)
+
+            # Group 22: English (Bobur usta - Dush-Chor-Juma 08:00)
+            g_eng_bobur_dush_0800 = make_group("English (Bobur usta - Dush-Chor-Juma 08:00)", 'english', 'bobur', [
+                (1, datetime.time(8, 0), datetime.time(9, 30), "110-xona"),
+                (3, datetime.time(8, 0), datetime.time(9, 30), "110-xona"),
+                (5, datetime.time(8, 0), datetime.time(9, 30), "110-xona"),
+            ], capacity=35)
+            for name, phone, price, reason in [
+                ("Rustamqulov M.", "90 035 97 06", 400000, ""),
+                ("Farmonova Shoh.", "95 447 35 36", 400000, ""),
+                ("Mardonov Don.", "93 165 27 78", 400000, ""),
+                ("Shamsiyeva X.", "90 459 33 09", 400000, ""),
+                ("Nazarov Jasur", "77 260 74 44", 400000, ""),
+                ("Aliqulova Moh.", "91 520 76 98", 400000, ""),
+                ("Ubaydullayev P.", "77 261 80 89", 400000, ""),
+                ("Usanova Moh.", "91 313 17 31", 400000, ""),
+                ("Xudoyberdiyeva", "95 543 33 92", 400000, ""),
+                ("Shamsillayeva Sh.", "99 544 97 12", 400000, ""),
+                ("Safarova Shod.", "95 175 04 11", 400000, ""),
+                ("Boboqulov Otabek", "90 010 31 09", 280000, "Chegirma (280 ming)"),
+                ("Safarova Sarv.", "99 134 54 90", 400000, ""),
+                ("Xudoyberdiyev F.", "95 431 46 76", 400000, ""),
+                ("Mardonova N.", "99 430 96 50", 400000, ""),
+                ("Kanjayev Sardor", "33 298 78 77", 400000, ""),
+                ("Bo'riyeva Aziza", "90 600 47 40", 400000, ""),
+                ("Ergashev Temur", "50 107 85 74", 400000, ""),
+                ("Hamidov Ali", "70 104 74 71", 400000, ""),
+                ("Isroilov F.", "90 455 83 76", 400000, ""),
+                ("Mansurov O.", "77 213 21 00", 400000, ""),
+                ("Bo'riyeva Z.", "77 168 15 99", 400000, ""),
+                ("Xasanova Moh.", "99 053 43 88", 400000, ""),
+                ("Raxmatova Shahnoza", "99 255 10 71", 400000, ""),
+                ("Komilzoda S.", "90 566 67 61", 400000, ""),
+                ("Baxridinova", "99 117 35 71", 400000, ""),
+                ("Ergashev Elyor", "77 024 11 84", 210000, "Chegirma (210 ming)"),
+                ("Hamroyev Diyor", "77 024 11 85", 210000, "Chegirma (210 ming)"),
+            ]:
+                enroll_student(name, phone, g_eng_bobur_dush_0800, price, reason)
+
+            # 7. Generate lessons for all groups for the current month
             all_groups = StudyGroup.objects.all()
             total_lessons = 0
             for grp in all_groups:
