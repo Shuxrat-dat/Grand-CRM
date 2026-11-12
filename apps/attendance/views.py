@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 from apps.accounts.decorators import admin_or_owner_required
 from apps.audit.services import log_audit
@@ -14,7 +15,10 @@ def lessons_list_view(request):
     group_id = request.GET.get('group')
     date_filter = request.GET.get('date')
 
-    lessons = Lesson.objects.select_related('group', 'group__course', 'group__teacher').prefetch_related('attendances')
+    lessons = Lesson.objects.select_related('group', 'group__course', 'group__teacher').annotate(
+        present_count=Count('attendances', filter=Q(attendances__status__in=['present', 'late'])),
+        absent_count=Count('attendances', filter=Q(attendances__status__in=['absent', 'excused'])),
+    )
 
     if group_id:
         lessons = lessons.filter(group_id=group_id)
@@ -102,9 +106,7 @@ def lesson_attendance_view(request, lesson_id):
             if new_status:
                 if new_status == AttendanceRecord.Status.ABSENT:
                     if not new_reason or new_reason not in AttendanceRecord.AbsenceReason.values:
-                        errors.append(f"{student.full_name}: Qatnashmadi deb belgilanganda sabab tanlanishi shart (Bemor, Safarda, Oilaviy sabablar, Sababsiz, Boshqa).")
-                    if not new_note:
-                        errors.append(f"{student.full_name}: Qatnashmadi deb belgilanganda izoh / kommentariy kiritilishi shart.")
+                        errors.append(f"{student.full_name}: Qatnashmadi deb belgilanganda sabab tanlanishi shart.")
 
                 parsed_data[student.id] = {
                     'status': new_status,

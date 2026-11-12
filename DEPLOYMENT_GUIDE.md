@@ -64,9 +64,9 @@ git push -u origin main
 Server ishga tushgach, brauzeringizda sizga berilgan havolani ochasiz:
 * **Ega (Owner) hisobi:**
   * Login: `owner`
-  * Parol: `owner123`
+  * Parol: (o'zingiz belgilaysiz: `INITIAL_OWNER_PASSWORD`)
 * **Administrator hisobi:**
   * Login: `admin`
-  * Parol: `admin123`
+  * Parol: (o'zingiz belgilaysiz: `INITIAL_ADMIN_PASSWORD`)
 
 *Tizimga kirgach, birinchi navbatda sozlamalar bo‘limidan o‘zingizga yangi xavfsiz parol o‘rnatib oling.*

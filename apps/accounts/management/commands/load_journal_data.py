@@ -25,9 +25,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         force = options.get('force', False)
-        if Student.objects.count() >= 450 and not force:
+        if Student.objects.exists() and not force:
             self.stdout.write(self.style.NOTICE(
-                f"Bazadagi real o'quvchilar allaqachon to'liq yuklangan ({Student.objects.count()} ta o'quvchi mavjud). Qayta yuklash o'tkazib yuborildi."
+                f"Bazada ma'lumotlar mavjud ({Student.objects.count()} ta o'quvchi). Hech narsa o'chirilmadi. Faqat butunlay qayta yuklash uchun --force ishlating (BARCHA ma'lumotlar o'chadi)."
             ))
             return
 
@@ -217,8 +217,7 @@ class Command(BaseCommand):
                     start_date=start_of_month,
                     monthly_price=price,
                     custom_price_reason=reason if custom_price and custom_price != group.course.default_monthly_price else "",
-                    status=Enrollment.Status.ACTIVE,
-                    payment_status=Enrollment.PaymentStatus.PAID if custom_price else Enrollment.PaymentStatus.UNPAID
+                    status=Enrollment.Status.ACTIVE
                 )
                 if custom_price and custom_price != group.course.default_monthly_price:
                     EnrollmentPriceHistory.objects.create(

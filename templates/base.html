@@ -272,6 +272,7 @@
                 </a>
             </div>
 
+            {% if is_owner %}
             <!-- 4. Finance (Moliya) -->
             <a href="#menuFinance" class="nav-link {% if 'payments' in request.path or 'charges' in request.path or 'debtors' in request.path or 'payroll' in request.path or 'expenses' in request.path or 'cash-flow' in request.path or 'accrual-profit' in request.path %}active{% endif %}" data-bs-toggle="collapse" role="button" aria-expanded="{% if 'payments' in request.path or 'charges' in request.path or 'debtors' in request.path or 'payroll' in request.path or 'expenses' in request.path or 'cash-flow' in request.path or 'accrual-profit' in request.path %}true{% else %}false{% endif %}" aria-controls="menuFinance">
                 <i class="bi bi-cash-stack menu-icon"></i>
@@ -304,6 +305,7 @@
                 <span class="flex-grow-1">Hisobotlar</span>
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.7rem;">Yangi</span>
             </a>
+            {% endif %}
 
             <!-- 6. Management (Settings / Users / Audit) for Owner -->
             {% if is_owner %}

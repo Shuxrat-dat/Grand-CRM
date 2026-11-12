@@ -3,8 +3,9 @@ from django.core.management import call_command
 
 
 def populate_journal_data(apps, schema_editor):
-    # This runs directly on production during 'python manage.py migrate'
-    call_command('load_journal_data', force=True)
+    # Intentionally a no-op: this used to wipe and reload all data during migrate.
+    # Load initial journal data explicitly with: python manage.py load_journal_data
+    return
 
 
 class Migration(migrations.Migration):

@@ -40,7 +40,7 @@
                             <span class="text-muted">To'langan sana:</span> <strong>{{ payment.paid_at|date:"Y-m-d H:i" }}</strong>
                         </div>
                         <div class="col-sm-6">
-                            <span class="text-muted">Kvitansiya / Hujjat:</span> <strong>{{ payment.reference|default:"Mavjud emas" }}</strong>
+                            <span class="text-muted">Guruh:</span> <strong>{{ payment.group.name|default:"Ko'rsatilmagan" }}</strong>
                         </div>
                         <div class="col-sm-6">
                             <span class="text-muted">Qabul qilgan xodim:</span> <strong>{{ payment.created_by.username|default:"Tizim" }}</strong>
@@ -97,10 +97,10 @@
                         <i class="bi bi-arrow-left me-1"></i> Ro'yxatga qaytish
                     </a>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
-                            <i class="bi bi-printer me-1"></i> Chop etish
-                        </button>
-                        {% if payment.status == 'completed' %}
+                        <a href="{% url 'billing:payment_receipt' payment.id %}?print=1" target="_blank" class="btn btn-primary">
+                            <i class="bi bi-printer me-1"></i> Chek (58 mm)
+                        </a>
+                        {% if payment.status == 'completed' and is_owner %}
                             <a href="{% url 'billing:payment_cancel' payment.id %}" class="btn btn-outline-danger">
                                 <i class="bi bi-x-circle me-1"></i> Bekor qilish (Storno)
                             </a>

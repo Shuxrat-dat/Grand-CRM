@@ -15,6 +15,7 @@ urlpatterns = [
     path('payments/create/', views.payment_create_view, name='payment_create'),
     path('students/<int:student_id>/payments/create/', views.payment_create_view, name='student_payment_create'),
     path('payments/<int:payment_id>/', views.payment_detail_view, name='payment_detail'),
+    path('payments/<int:payment_id>/receipt/', views.payment_receipt_view, name='payment_receipt'),
     path('payments/<int:payment_id>/cancel/', views.payment_cancel_view, name='payment_cancel'),
 
     # Debtors

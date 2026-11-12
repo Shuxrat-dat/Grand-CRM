@@ -249,7 +249,19 @@ def group_detail_view(request, group_id):
         id=group_id
     )
     schedules = group.schedules.all()
-    enrollments = group.enrollments.filter(status=Enrollment.Status.ACTIVE).select_related('student')
+    enrollments = list(group.enrollments.filter(status=Enrollment.Status.ACTIVE).select_related('student'))
+    # Payment status is derived automatically from this month's payments made to this group
+    from apps.billing.services import get_group_month_payments
+    paid_map = get_group_month_payments(group)
+    for enr in enrollments:
+        paid = paid_map.get(enr.student_id, Decimal('0.00'))
+        enr.paid_this_month = paid
+        if enr.monthly_price and paid >= enr.monthly_price:
+            enr.pay_state = 'paid'
+        elif paid > 0:
+            enr.pay_state = 'partial'
+        else:
+            enr.pay_state = 'unpaid'
     recent_lessons = group.lessons.all().order_by('-date')[:10]
 
     return render(request, 'academics/group_detail.html', {
@@ -436,51 +448,6 @@ def drop_student_view(request, enrollment_id):
         messages.info(request, f"{enrollment.student.full_name} guruhdan chiqarildi.")
         return redirect('academics:group_detail', group_id=enrollment.group.id)
     return redirect('academics:groups_list')
-
-
-@admin_or_owner_required
-def enrollment_update_payment_status_view(request, enrollment_id):
-    enrollment = get_object_or_404(Enrollment.objects.select_related('student', 'group'), id=enrollment_id)
-    if request.method == 'POST':
-        new_status = request.POST.get('payment_status')
-        # If toggling without explicit status:
-        if not new_status:
-            new_status = Enrollment.PaymentStatus.PAID if enrollment.payment_status == Enrollment.PaymentStatus.UNPAID else Enrollment.PaymentStatus.UNPAID
-
-        if new_status in Enrollment.PaymentStatus.values:
-            old_status = enrollment.payment_status
-            enrollment.payment_status = new_status
-            enrollment.save(update_fields=['payment_status', 'updated_at'])
-
-            log_audit(
-                actor=request.user,
-                action='UPDATE',
-                entity_type='Enrollment',
-                entity_id=enrollment.id,
-                changes_before={'payment_status': old_status},
-                changes_after={'payment_status': new_status},
-                reason=f"{enrollment.student.full_name} ({enrollment.group.name}) uchun to'lov holati '{enrollment.get_payment_status_display()}' ga o'zgartirildi"
-            )
-
-            is_ajax = (
-                request.headers.get('x-requested-with') == 'XMLHttpRequest' or
-                'application/json' in request.headers.get('accept', '') or
-                request.content_type == 'application/json'
-            )
-            if is_ajax:
-                return JsonResponse({
-                    'success': True,
-                    'enrollment_id': enrollment.id,
-                    'payment_status': enrollment.payment_status,
-                    'payment_status_display': enrollment.get_payment_status_display(),
-                    'is_paid': enrollment.payment_status == Enrollment.PaymentStatus.PAID,
-                })
-
-            messages.success(request, f"{enrollment.student.full_name} uchun to'lov holati '{enrollment.get_payment_status_display()}' ga o'zgartirildi.")
-        else:
-            messages.error(request, "Noto'g'ri to'lov holati tanlandi.")
-
-    return redirect('academics:group_detail', group_id=enrollment.group.id)
 
 
 # ==============================================================================

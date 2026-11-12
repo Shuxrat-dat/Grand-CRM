@@ -2,7 +2,7 @@ services:
   - type: web
     name: grand-crm
     runtime: python
-    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py create_initial_owner && python manage.py load_journal_data"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py create_initial_owner"
     startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"
     envVars:
       - key: PYTHON_VERSION
@@ -13,6 +13,10 @@ services:
         sync: false
       - key: SECRET_KEY
         generateValue: true
+      - key: INITIAL_OWNER_PASSWORD
+        sync: false
+      - key: INITIAL_ADMIN_PASSWORD
+        sync: false
       - key: ALLOWED_HOSTS
         value: ".onrender.com,localhost,127.0.0.1"
       - key: TIME_ZONE

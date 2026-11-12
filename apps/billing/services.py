@@ -151,7 +151,8 @@ def register_payment(
     reference: str = "",
     user = None,
     idempotency_key: str = None,
-    charge_id: int = None
+    charge_id: int = None,
+    group_id: int = None
 ) -> Payment:
     """
     Registers a payment with idempotency protection and atomic allocation.
@@ -174,6 +175,7 @@ def register_payment(
 
     payment = Payment.objects.create(
         student=student,
+        group_id=group_id,
         amount=amount,
         paid_at=paid_at,
         method=method,
@@ -235,6 +237,7 @@ def register_payment(
             'amount': str(amount),
             'method': method,
             'reference': reference,
+            'group_id': group_id,
             'unallocated': str(payment.unallocated_amount)
         },
         reason="To'lov qabul qilindi va taqsimlandi"
@@ -352,3 +355,19 @@ def update_all_charge_statuses(target_date: date = None):
     charges = MonthlyCharge.objects.exclude(status__in=[MonthlyCharge.Status.PAID, MonthlyCharge.Status.CANCELLED])
     for c in charges:
         c.refresh_status()
+
+
+def get_group_month_payments(group, target_date: date = None) -> dict:
+    """
+    Returns {student_id: total completed payments} made to the given group
+    during the month of target_date (default: current month).
+    """
+    from django.db.models import Sum
+    target_date = target_date or timezone.localdate()
+    rows = Payment.objects.filter(
+        group=group,
+        status=Payment.Status.COMPLETED,
+        paid_at__year=target_date.year,
+        paid_at__month=target_date.month,
+    ).values('student_id').annotate(total=Sum('amount'))
+    return {r['student_id']: r['total'] for r in rows}

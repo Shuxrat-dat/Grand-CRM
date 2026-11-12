@@ -18,7 +18,7 @@ class PaymentForm(forms.ModelForm):
 
     class Meta:
         model = Payment
-        fields = ['student', 'amount', 'method', 'paid_at', 'reference', 'idempotency_key']
+        fields = ['student', 'group', 'amount', 'method', 'paid_at', 'idempotency_key']
         widgets = {
             'student': DynamicSearchSelect(
                 search_url='/api/search/students/',
@@ -28,7 +28,7 @@ class PaymentForm(forms.ModelForm):
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Masalan: 500000'}),
             'method': forms.Select(attrs={'class': 'form-select'}),
             'paid_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-            'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Chek raqami yoki kvitansiya'}),
+            'group': forms.Select(attrs={'class': 'form-select'}),
             'idempotency_key': forms.HiddenInput(),
         }
         labels = {
@@ -36,7 +36,7 @@ class PaymentForm(forms.ModelForm):
             'amount': "To'lov summasi (so'm)",
             'method': "To'lov usuli",
             'paid_at': "To'lov vaqti",
-            'reference': "Kvitansiya / Chek raqami",
+            'group': "Guruh",
         }
 
     def __init__(self, *args, **kwargs):
@@ -49,15 +49,33 @@ class PaymentForm(forms.ModelForm):
         if not self.initial.get('paid_at'):
             self.initial['paid_at'] = timezone.now().strftime('%Y-%m-%dT%H:%M')
 
+        self.fields['group'].required = True
+        self.fields['group'].empty_label = "- Guruhni tanlang -"
+
         if student_id:
             self.fields['student'].initial = student_id
+            self.fields['group'].queryset = StudyGroup.objects.filter(
+                enrollments__student_id=student_id,
+                enrollments__status=Enrollment.Status.ACTIVE,
+            ).distinct().order_by('name')
             self.fields['charge'].queryset = MonthlyCharge.objects.filter(
                 student_id=student_id
             ).exclude(status__in=[MonthlyCharge.Status.PAID, MonthlyCharge.Status.CANCELLED]).order_by('billing_month')
         else:
+            self.fields['group'].queryset = StudyGroup.objects.filter(is_active=True).order_by('name')
             self.fields['charge'].queryset = MonthlyCharge.objects.exclude(
                 status__in=[MonthlyCharge.Status.PAID, MonthlyCharge.Status.CANCELLED]
             ).order_by('billing_month')
+
+    def clean(self):
+        cleaned = super().clean()
+        student = cleaned.get('student')
+        group = cleaned.get('group')
+        if student and group and not Enrollment.objects.filter(
+            student=student, group=group, status=Enrollment.Status.ACTIVE
+        ).exists():
+            self.add_error('group', "Bu o'quvchi tanlangan guruhda o'qimaydi.")
+        return cleaned
 
 
 class MonthlyChargeForm(forms.Form):

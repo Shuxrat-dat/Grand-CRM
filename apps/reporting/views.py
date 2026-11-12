@@ -134,7 +134,7 @@ def report_accrual_profit_view(request):
     return render(request, 'reporting/accrual_profit.html', {'data': data, 'start_date': start_date, 'end_date': end_date})
 
 
-@admin_or_owner_required
+@owner_required
 def report_payments_view(request):
     start_date, end_date = _parse_date_range(request)
     method_filter = request.GET.get('method', '')
@@ -160,7 +160,7 @@ def report_payments_view(request):
     })
 
 
-@admin_or_owner_required
+@owner_required
 def report_charges_view(request):
     start_date, end_date = _parse_date_range(request)
     status_filter = request.GET.get('status', '')
@@ -191,7 +191,7 @@ def report_charges_view(request):
     })
 
 
-@admin_or_owner_required
+@owner_required
 def report_debtors_view(request):
     debtors = get_debtors_report()
     total_debt = sum([d['total_debt'] for d in debtors], Decimal('0.00'))
@@ -239,7 +239,7 @@ def report_group_revenue_view(request):
     })
 
 
-@admin_or_owner_required
+@owner_required
 def report_attendance_view(request):
     start_date, end_date = _parse_date_range(request)
     group_id = request.GET.get('group', '')
@@ -331,7 +331,7 @@ def report_expenses_view(request):
     })
 
 
-@admin_or_owner_required
+@owner_required
 def export_report_view(request, report_type):
     """
     Exports filtered reports to Excel or PDF.
@@ -410,7 +410,7 @@ def export_report_view(request, report_type):
         return response
 
 
-@admin_or_owner_required
+@owner_required
 def reports_hub_view(request):
     start_date, end_date = _parse_date_range(request)
     is_owner = request.user.is_owner

@@ -192,10 +192,6 @@ class Enrollment(models.Model):
         COMPLETED = 'completed', 'Yakunlangan'
         DROPPED = 'dropped', "To'xtatilgan"
 
-    class PaymentStatus(models.TextChoices):
-        PAID = 'paid', 'To‘landi'
-        UNPAID = 'unpaid', 'To‘lanmadi'
-
     student = models.ForeignKey(
         'students.Student',
         on_delete=models.PROTECT,
@@ -225,12 +221,6 @@ class Enrollment(models.Model):
         choices=Status.choices,
         default=Status.ACTIVE,
         verbose_name="A'zolik holati"
-    )
-    payment_status = models.CharField(
-        max_length=20,
-        choices=PaymentStatus.choices,
-        default=PaymentStatus.UNPAID,
-        verbose_name="To‘lov holati"
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan")

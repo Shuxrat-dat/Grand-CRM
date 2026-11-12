@@ -8,8 +8,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables from .env file
 load_dotenv(BASE_DIR / '.env')
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'grand-crm-insecure-secret-key-change-in-production-2026')
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
+# Secure by default: DEBUG is OFF unless explicitly enabled (e.g. DEBUG=True in local .env)
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
+
+_DEV_SECRET_KEY = 'dev-only-insecure-key-never-use-in-production'
+SECRET_KEY = os.getenv('SECRET_KEY', '')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = _DEV_SECRET_KEY
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured("SECRET_KEY environment variable is required when DEBUG is off.")
 
 allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '*' if DEBUG else '.onrender.com,.koyeb.app,localhost,127.0.0.1')
 if allowed_hosts_str.strip() == '*':
@@ -27,12 +36,6 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Production Security Hardening
 if not DEBUG:
-    if SECRET_KEY == 'grand-crm-insecure-secret-key-change-in-production-2026':
-        import warnings
-        warnings.warn(
-            "CRITICAL: Using default SECRET_KEY in production! Provide a secure SECRET_KEY in environment variables.",
-            RuntimeWarning
-        )
     SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 'yes')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

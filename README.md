@@ -107,14 +107,14 @@ python manage.py create_initial_owner
 ```
 *Standart parametrlar:*
 - **Login:** `owner`
-- **Parol:** `owner123`
+- **Parol:** (o'zingiz belgilaysiz: `INITIAL_OWNER_PASSWORD`)
 - **Roli:** `Ega (Owner)`
 
 *(Ixtiyoriy) Tizimni sinab ko'rish uchun tayyor demo ma'lumotlarni yuklash:*
 ```powershell
 python manage.py populate_demo_data
 ```
-Bu buyruq tayyor kurslar, o'qituvchilar, guruhlar, o'quvchilar va qo'shimcha `admin` / `admin123` hisobini yaratadi.
+Bu buyruq tayyor kurslar, o'qituvchilar, guruhlar, o'quvchilar va qo'shimcha `admin` / (o'zingiz belgilaysiz: `INITIAL_ADMIN_PASSWORD`) hisobini yaratadi.
 
 ### 5-qadam. Serverni ishga tushirish
 ```powershell

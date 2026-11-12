@@ -1,0 +1,85 @@
+{% load crm_tags %}
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chek #{{ payment.id }}</title>
+<style>
+    /* 58mm thermal paper: printable width is ~48mm */
+    @page { size: 58mm auto; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #fff; color: #000; }
+    body {
+        width: 58mm;
+        margin: 0 auto;
+        padding: 3mm 5mm 6mm 5mm;
+        font-family: "Courier New", Consolas, monospace;
+        font-size: 11px;
+        line-height: 1.35;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .c { text-align: center; }
+    .b { font-weight: 700; }
+    .title { font-size: 13px; font-weight: 700; text-transform: uppercase; word-break: break-word; }
+    .sep { border: 0; border-top: 1px dashed #000; margin: 2mm 0; }
+    .row { display: flex; justify-content: space-between; gap: 2mm; }
+    .row .k { flex: 0 0 auto; }
+    .row .v { text-align: right; word-break: break-word; overflow-wrap: anywhere; min-width: 0; }
+    .block .k { display: block; }
+    .block .v { display: block; font-weight: 700; word-break: break-word; overflow-wrap: anywhere; }
+    .total { font-size: 15px; font-weight: 700; text-align: center; margin: 1mm 0; word-break: break-word; }
+    .void { border: 1px solid #000; padding: 1mm; text-align: center; font-weight: 700; margin: 2mm 0; }
+    .small { font-size: 9px; }
+    .noprint { margin: 4mm 0 0; text-align: center; }
+    .noprint button, .noprint a {
+        font: inherit; font-size: 12px; padding: 6px 10px; margin: 2px;
+        border: 1px solid #000; background: #fff; color: #000; cursor: pointer; text-decoration: none;
+        display: inline-block;
+    }
+    @media print {
+        .noprint { display: none !important; }
+        body { margin: 0; }
+    }
+    @media screen {
+        body { margin: 10px auto; box-shadow: 0 0 0 1px #ccc; }
+    }
+</style>
+</head>
+<body>
+    <div class="c title">{{ center.center_name }}</div>
+    {% if center.address %}<div class="c small">{{ center.address }}</div>{% endif %}
+    {% if center.phone %}<div class="c small">Tel: {{ center.phone }}</div>{% endif %}
+
+    <hr class="sep">
+    <div class="c b">TO'LOV CHEKI</div>
+    <div class="row"><span class="k">Chek №</span><span class="v b">{{ payment.id }}</span></div>
+    <div class="row"><span class="k">Sana</span><span class="v">{{ payment.paid_at|date:"d.m.Y H:i" }}</span></div>
+
+    <hr class="sep">
+    <div class="block"><span class="k">O'quvchi:</span><span class="v">{{ payment.student.full_name }}</span></div>
+    <div class="block" style="margin-top:1mm"><span class="k">Guruh:</span><span class="v">{{ payment.group.name|default:"-" }}</span></div>
+    <div class="row" style="margin-top:1mm"><span class="k">Usul</span><span class="v">{{ payment.get_method_display }}</span></div>
+
+    <hr class="sep">
+    <div class="c">TO'LOV SUMMASI</div>
+    <div class="total">{{ payment.amount|uzs }}</div>
+
+    {% if payment.status == 'cancelled' %}
+        <div class="void">BEKOR QILINGAN</div>
+    {% endif %}
+
+    <hr class="sep">
+    <div class="row small"><span class="k">Qabul qildi</span><span class="v">{{ payment.created_by.username|default:"-" }}</span></div>
+    <div class="c b" style="margin-top:2mm">Rahmat!</div>
+
+    <div class="noprint">
+        <button type="button" onclick="window.print()">Chop etish</button>
+        <a href="{% url 'billing:payment_detail' payment.id %}">Orqaga</a>
+    </div>
+    {% if autoprint %}
+    <script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 200); });</script>
+    {% endif %}
+</body>
+</html>

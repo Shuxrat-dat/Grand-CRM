@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
-from apps.accounts.decorators import admin_or_owner_required
+from apps.accounts.decorators import admin_or_owner_required, owner_required
 from apps.accounts.models import CenterSettings
 from .models import MonthlyCharge, Payment, PaymentAllocation
 from .forms import PaymentForm, MonthlyChargeForm, BulkChargesForm, CancelReasonForm
@@ -19,7 +19,7 @@ from apps.academics.models import Enrollment, StudyGroup
 
 # --- CHARGES ---
 
-@admin_or_owner_required
+@owner_required
 def charges_list_view(request):
     update_all_charge_statuses()
 
@@ -54,7 +54,7 @@ def charges_list_view(request):
     })
 
 
-@admin_or_owner_required
+@owner_required
 def charge_create_view(request):
     settings_obj = CenterSettings.get_settings()
     initial = {
@@ -90,7 +90,7 @@ def charge_create_view(request):
     return render(request, 'billing/charge_form.html', {'form': form, 'title': "Oylik hisob shakllantirish"})
 
 
-@admin_or_owner_required
+@owner_required
 def generate_bulk_charges_view(request):
     settings_obj = CenterSettings.get_settings()
     initial = {
@@ -135,7 +135,7 @@ def generate_bulk_charges_view(request):
     return render(request, 'billing/bulk_charges_form.html', {'form': form, 'title': "Ommaviy oylik hisoblash"})
 
 
-@admin_or_owner_required
+@owner_required
 def charge_cancel_view(request, charge_id):
     charge = get_object_or_404(MonthlyCharge, id=charge_id)
 
@@ -161,13 +161,13 @@ def charge_cancel_view(request, charge_id):
 
 # --- PAYMENTS ---
 
-@admin_or_owner_required
+@owner_required
 def payments_list_view(request):
     student_id = request.GET.get('student', '')
     method_filter = request.GET.get('method', '')
     status_filter = request.GET.get('status', '')
 
-    payments = Payment.objects.select_related('student', 'created_by').prefetch_related('allocations__charge')
+    payments = Payment.objects.select_related('student', 'group', 'created_by').prefetch_related('allocations__charge')
 
     if student_id:
         payments = payments.filter(student_id=student_id)
@@ -194,7 +194,7 @@ def payment_create_view(request, student_id=None):
             amount = form.cleaned_data['amount']
             method = form.cleaned_data['method']
             paid_at = form.cleaned_data['paid_at']
-            reference = form.cleaned_data['reference']
+            group = form.cleaned_data['group']
             idempotency_key = form.cleaned_data['idempotency_key']
             target_charge = form.cleaned_data.get('charge')
 
@@ -204,17 +204,20 @@ def payment_create_view(request, student_id=None):
                     amount=amount,
                     method=method,
                     paid_at=paid_at,
-                    reference=reference,
                     user=request.user,
                     idempotency_key=idempotency_key,
-                    charge_id=target_charge.id if target_charge else None
+                    charge_id=target_charge.id if target_charge else None,
+                    group_id=group.id
                 )
                 messages.success(request, f"{student.full_name} dan {amount} so'm to'lov muvaffaqiyatli qabul qilindi.")
                 return redirect('billing:payment_detail', payment_id=payment.id)
             except ValidationError as e:
                 messages.error(request, str(e))
     else:
-        form = PaymentForm(student_id=student_id)
+        initial = {}
+        if request.GET.get('group', '').isdigit():
+            initial['group'] = int(request.GET['group'])
+        form = PaymentForm(student_id=student_id, initial=initial)
 
     return render(request, 'billing/payment_form.html', {
         'form': form,
@@ -226,7 +229,7 @@ def payment_create_view(request, student_id=None):
 @admin_or_owner_required
 def payment_detail_view(request, payment_id):
     payment = get_object_or_404(
-        Payment.objects.select_related('student', 'created_by').prefetch_related(
+        Payment.objects.select_related('student', 'group', 'created_by').prefetch_related(
             'allocations__charge__enrollment__group'
         ),
         id=payment_id
@@ -240,6 +243,19 @@ def payment_detail_view(request, payment_id):
 
 
 @admin_or_owner_required
+def payment_receipt_view(request, payment_id):
+    payment = get_object_or_404(
+        Payment.objects.select_related('student', 'group', 'created_by'),
+        id=payment_id
+    )
+    return render(request, 'billing/payment_receipt_58.html', {
+        'payment': payment,
+        'center': CenterSettings.get_settings(),
+        'autoprint': request.GET.get('print') == '1',
+    })
+
+
+@owner_required
 def payment_cancel_view(request, payment_id):
     payment = get_object_or_404(Payment, id=payment_id)
 
@@ -265,7 +281,7 @@ def payment_cancel_view(request, payment_id):
 
 # --- DEBTORS ---
 
-@admin_or_owner_required
+@owner_required
 def debtors_list_view(request):
     update_all_charge_statuses()
 

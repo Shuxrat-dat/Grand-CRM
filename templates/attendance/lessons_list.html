@@ -74,7 +74,12 @@
                     <td>{{ lesson.group.teacher.full_name }}</td>
                     <td>{{ lesson.topic|default:"-" }}</td>
                     <td>
-                        <span class="badge bg-light text-dark border">{{ lesson.attendances.count }} nafar</span>
+                        {% if lesson.present_count or lesson.absent_count %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" title="Keldi">{{ lesson.present_count }} keldi</span>
+                            {% if lesson.absent_count %}<span class="badge bg-danger-subtle text-danger border border-danger-subtle" title="Kelmadi">{{ lesson.absent_count }} kelmadi</span>{% endif %}
+                        {% else %}
+                            <span class="badge bg-light text-muted border">Belgilanmagan</span>
+                        {% endif %}
                     </td>
                     <td>
                         {% if lesson.status == 'completed' %}
@@ -87,7 +92,7 @@
                     </td>
                     <td class="text-end">
                         <a href="{% url 'attendance:lesson_attendance' lesson.id %}" class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-check2-square me-1"></i> Davomat jurnali
+                            <i class="bi bi-check2-square me-1"></i> {% if lesson.present_count or lesson.absent_count %}Ko‘rish / o‘zgartirish{% else %}Davomat qilish{% endif %}
                         </a>
                     </td>
                 </tr>

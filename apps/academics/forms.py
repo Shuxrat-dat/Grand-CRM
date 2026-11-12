@@ -207,7 +207,7 @@ class EnrollmentPriceUpdateForm(forms.Form):
 class EnrollmentForm(forms.ModelForm):
     class Meta:
         model = Enrollment
-        fields = ['student', 'group', 'start_date', 'monthly_price', 'payment_status']
+        fields = ['student', 'group', 'start_date', 'monthly_price']
         widgets = {
             'student': DynamicSearchSelect(
                 search_url='/api/search/students/',
@@ -217,14 +217,12 @@ class EnrollmentForm(forms.ModelForm):
             'group': forms.Select(attrs={'class': 'form-select'}),
             'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'monthly_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': "Bo'sh qoldirilsa kurs narxi olinadi"}),
-            'payment_status': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
             'student': "O'quvchi",
             'group': "Guruh",
             'start_date': "Boshlash sanasi",
             'monthly_price': "Kelishilgan oylik narx (so'm)",
-            'payment_status': "To‘lov holati",
         }
 
     def clean(self):

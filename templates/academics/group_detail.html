@@ -198,7 +198,7 @@
                             </div>
                         </div>
                         <a href="{% url 'attendance:lesson_attendance' lesson.id %}" class="btn btn-sm btn-outline-success">
-                            Davomat ({{ lesson.attendances.count }})
+                            {% if lesson.attendances.count %}Davomat ({{ lesson.attendances.count }}){% else %}Davomat qilish{% endif %}
                         </a>
                     </li>
                     {% empty %}
@@ -262,36 +262,13 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm {% if enr.payment_status == 'paid' %}btn-success text-white{% else %}btn-danger text-white{% endif %} dropdown-toggle py-1 px-2 rounded-pill fw-medium payment-status-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8rem;" id="paymentStatusBtn_{{ enr.id }}" title="To'lov holatini o'zgartirish">
-                                            {% if enr.payment_status == 'paid' %}
-                                                <i class="bi bi-check-circle-fill me-1"></i>To‘landi
-                                            {% else %}
-                                                <i class="bi bi-x-circle-fill me-1"></i>To‘lanmadi
-                                            {% endif %}
-                                        </button>
-                                        <ul class="dropdown-menu shadow-sm border-0 dropdown-menu-start">
-                                            <li><h6 class="dropdown-header small text-muted">To'lov holatini o'zgartirish</h6></li>
-                                            <li>
-                                                <form method="post" action="{% url 'academics:enrollment_update_payment_status' enr.id %}" class="payment-status-form">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="payment_status" value="paid">
-                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-success py-2 {% if enr.payment_status == 'paid' %}active bg-success text-white{% endif %}">
-                                                        <i class="bi bi-check-circle-fill"></i> <strong>To‘landi</strong>
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            <li>
-                                                <form method="post" action="{% url 'academics:enrollment_update_payment_status' enr.id %}" class="payment-status-form">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="payment_status" value="unpaid">
-                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-danger py-2 {% if enr.payment_status == 'unpaid' %}active bg-danger text-white{% endif %}">
-                                                        <i class="bi bi-x-circle-fill"></i> <strong>To‘lanmadi</strong>
-                                                    </button>
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
+                                    {% if enr.pay_state == 'paid' %}
+                                        <span class="badge rounded-pill bg-success px-3 py-2" title="Joriy oy uchun to'langan: {{ enr.paid_this_month|floatformat:0 }} so'm"><i class="bi bi-check-circle-fill me-1"></i>To‘landi</span>
+                                    {% elif enr.pay_state == 'partial' %}
+                                        <span class="badge rounded-pill bg-warning text-dark px-3 py-2" title="Joriy oy uchun to'langan: {{ enr.paid_this_month|floatformat:0 }} so'm"><i class="bi bi-hourglass-split me-1"></i>Qisman</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-danger px-3 py-2"><i class="bi bi-x-circle-fill me-1"></i>To‘lanmadi</span>
+                                    {% endif %}
                                 </td>
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-1">
@@ -326,7 +303,7 @@
                                             </ul>
                                         </div>
 
-                                        <a href="{% url 'billing:student_payment_create' enr.student.id %}" class="btn btn-sm btn-outline-success" title="To'lov">
+                                        <a href="{% url 'billing:student_payment_create' enr.student.id %}?group={{ group.id }}" class="btn btn-sm btn-outline-success" title="To'lov">
                                             <i class="bi bi-cash"></i>
                                         </a>
                                         <a href="{% url 'academics:transfer_student' enr.id %}" class="btn btn-sm btn-outline-info" title="Boshqa guruhga ko'chirish">
@@ -395,55 +372,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.payment-status-form').forEach(function(form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(form);
-            const actionUrl = form.getAttribute('action');
-            const dropdown = form.closest('.dropdown');
-            const toggleBtn = dropdown.querySelector('.payment-status-btn');
-
-            fetch(actionUrl, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.is_paid) {
-                        toggleBtn.className = 'btn btn-sm btn-success text-white dropdown-toggle py-1 px-2 rounded-pill fw-medium payment-status-btn';
-                        toggleBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>To‘landi';
-                    } else {
-                        toggleBtn.className = 'btn btn-sm btn-danger text-white dropdown-toggle py-1 px-2 rounded-pill fw-medium payment-status-btn';
-                        toggleBtn.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>To‘lanmadi';
-                    }
-                    dropdown.querySelectorAll('.dropdown-item').forEach(btn => {
-                        btn.classList.remove('active', 'bg-success', 'bg-danger', 'text-white');
-                    });
-                    const activeBtn = form.querySelector('.dropdown-item');
-                    if (activeBtn) {
-                        activeBtn.classList.add('active', data.is_paid ? 'bg-success' : 'bg-danger', 'text-white');
-                    }
-                    const bsDropdown = bootstrap.Dropdown.getInstance(toggleBtn);
-                    if (bsDropdown) bsDropdown.hide();
-                } else {
-                    form.submit();
-                }
-            })
-            .catch(() => {
-                form.submit();
-            });
-        });
-    });
-});
-</script>
 {% endblock %}

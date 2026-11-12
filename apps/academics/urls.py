@@ -28,7 +28,6 @@ urlpatterns = [
     path('groups/<int:group_id>/enroll/', views.enroll_student_view, name='group_enroll_student'),
     path('enrollments/<int:enrollment_id>/transfer/', views.transfer_student_view, name='transfer_student'),
     path('enrollments/<int:enrollment_id>/drop/', views.drop_student_view, name='drop_student'),
-    path('enrollments/<int:enrollment_id>/update-payment-status/', views.enrollment_update_payment_status_view, name='enrollment_update_payment_status'),
     path('enrollments/<int:enrollment_id>/update-price/', views.enrollment_update_price_view, name='enrollment_update_price'),
     path('enrollments/<int:enrollment_id>/revert-price/', views.enrollment_revert_price_view, name='enrollment_revert_price'),
     path('enrollments/<int:enrollment_id>/price-history/', views.enrollment_price_history_view, name='enrollment_price_history'),

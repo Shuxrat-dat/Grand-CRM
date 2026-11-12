@@ -43,8 +43,9 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Kvitansiya / Chek raqami</label>
-                            {{ form.reference }}
+                            <label class="form-label small fw-semibold">Guruh <span class="text-danger">*</span></label>
+                            {{ form.group }}
+                            {% if form.group.errors %}<div class="text-danger small mt-1">{{ form.group.errors }}</div>{% endif %}
                         </div>
 
                         <div class="col-12">
