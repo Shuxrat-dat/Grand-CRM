@@ -117,6 +117,14 @@
                     <i class="bi bi-calendar-check me-1"></i> Davomat jurnali
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-3 fw-semibold text-danger" id="absences-tab" data-bs-toggle="tab" data-bs-target="#absences-pane" type="button" role="tab">
+                    <i class="bi bi-clock-history me-1"></i> Qatnashmasliklar tarixi 
+                    {% if absences_count %}
+                        <span class="badge bg-danger rounded-pill ms-1">{{ absences_count }}</span>
+                    {% endif %}
+                </button>
+            </li>
         </ul>
     </div>
     <div class="card-body p-0">
@@ -147,13 +155,55 @@
                                 </td>
                                 <td>{{ enr.group.course.name }}</td>
                                 <td>{{ enr.group.teacher.full_name }}</td>
-                                <td class="fw-semibold text-primary">{{ enr.monthly_price|uzs }}</td>
+                                <td>
+                                    {% if enr.is_custom_price %}
+                                        <div class="fw-bold text-primary">{{ enr.monthly_price|uzs }}</div>
+                                        <div class="text-muted small">
+                                            <del>{{ enr.standard_price|uzs }}</del>
+                                            {% if enr.discount_amount %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">-{{ enr.discount_amount|uzs }}</span>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="fw-semibold text-dark">{{ enr.monthly_price|uzs }}</div>
+                                        <span class="badge bg-light text-muted border" style="font-size: 0.68rem;">Standart narx</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ enr.start_date|date:"Y-m-d" }}</td>
                                 <td>{{ enr.end_date|date:"Y-m-d"|default:"-" }}</td>
                                 <td>{{ enr.status|status_badge }}</td>
                                 <td class="text-end">
                                     {% if enr.status == 'active' %}
                                         <div class="d-flex justify-content-end gap-1">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="dropdown" title="Individual narx">
+                                                    <i class="bi bi-tag"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                                    <li><h6 class="dropdown-header small text-muted">Narx boshqaruvi</h6></li>
+                                                    <li>
+                                                        <a class="dropdown-item py-2" href="{% url 'academics:enrollment_update_price' enr.id %}?next={% url 'students:student_detail' student.id %}">
+                                                            <i class="bi bi-pencil me-2 text-primary"></i>Individual narx belgilash
+                                                        </a>
+                                                    </li>
+                                                    {% if enr.is_custom_price %}
+                                                    <li>
+                                                        <form method="post" action="{% url 'academics:enrollment_revert_price' enr.id %}" onsubmit="return confirm('Standart narxga qaytarishni tasdiqlaysizmi?');">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="next" value="{% url 'students:student_detail' student.id %}">
+                                                            <button type="submit" class="dropdown-item py-2 text-warning">
+                                                                <i class="bi bi-arrow-counterclockwise me-2"></i>Standart narxga qaytarish
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    {% endif %}
+                                                    <li>
+                                                        <a class="dropdown-item py-2" href="{% url 'academics:enrollment_price_history' enr.id %}">
+                                                            <i class="bi bi-clock-history me-2 text-secondary"></i>Narx tarixi
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                             <a href="{% url 'academics:transfer_student' enr.id %}" class="btn btn-sm btn-outline-info" title="Boshqa guruhga ko'chirish">
                                                 <i class="bi bi-arrow-left-right me-1"></i> Ko'chirish
                                             </a>
@@ -279,29 +329,128 @@
 
             <!-- 4. Attendance Tab -->
             <div class="tab-pane fade p-3" id="attendance-pane" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted small">Oxirgi 25 ta dars davomati ko‘rsatilmoqda</span>
+                    <a href="{% url 'attendance:student_absences' student.id %}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-clock-history me-1"></i> Barcha qatnashmasliklarni ko‘rish ({{ absences_count }})
+                    </a>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th>Dars sanasi</th>
                                 <th>Guruh</th>
                                 <th>Vaqti</th>
                                 <th>Davomat holati</th>
+                                <th>Sabab</th>
                                 <th>Qayd / Izoh</th>
+                                <th>Belgilagan xodim</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for att in attendances %}
-                            <tr>
+                            <tr class="{% if att.status == 'absent' %}table-danger-subtle{% endif %}">
                                 <td>{{ att.lesson.date|date:"Y-m-d" }}</td>
                                 <td>{{ att.lesson.group.name }}</td>
                                 <td>{{ att.lesson.starts_at|time:"H:i" }} - {{ att.lesson.ends_at|time:"H:i" }}</td>
                                 <td>{{ att.status|status_badge }}</td>
+                                <td>
+                                    {% if att.absence_reason %}
+                                        <span class="badge bg-secondary-subtle text-dark border">{{ att.get_absence_reason_display }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ att.notes|default:"-" }}</td>
+                                <td class="text-muted small">
+                                    {% if att.marked_by %}
+                                        {{ att.marked_by.get_full_name|default:att.marked_by.username }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">Davomat yozuvlari topilmadi.</td>
+                                <td colspan="7" class="text-center py-4 text-muted">Davomat yozuvlari topilmadi.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 5. Absences Tab (Qatnashmasliklar tarixi) -->
+            <div class="tab-pane fade p-3" id="absences-pane" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h6 class="fw-bold mb-0 text-danger"><i class="bi bi-exclamation-triangle me-1"></i>O‘quvchining darslarga qatnashmaslik tarixi</h6>
+                        <span class="text-muted small">Har bir qatnashmaslik bo‘yicha sabab, izoh, sana va ma'mur ko‘rsatilgan</span>
+                    </div>
+                    <a href="{% url 'attendance:student_absences' student.id %}" class="btn btn-sm btn-danger">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> Alohida sahifada to‘liq ko‘rish
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Dars sanasi</th>
+                                <th>Guruh</th>
+                                <th>Vaqti</th>
+                                <th>Qatnashmaslik sababi</th>
+                                <th>Kommentariy / Izoh</th>
+                                <th>Qayd etgan xodim</th>
+                                <th>Qayd etilgan vaqt</th>
+                                <th class="text-end">Amal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for abs in absences %}
+                            <tr>
+                                <td class="text-muted">{{ forloop.counter }}</td>
+                                <td><strong class="text-dark">{{ abs.lesson.date|date:"Y-m-d" }}</strong></td>
+                                <td>{{ abs.lesson.group.name }}</td>
+                                <td class="text-muted small">{{ abs.lesson.starts_at|time:"H:i" }} - {{ abs.lesson.ends_at|time:"H:i" }}</td>
+                                <td>
+                                    {% if abs.absence_reason == 'bemor' %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-heart-pulse me-1"></i>Bemor</span>
+                                    {% elif abs.absence_reason == 'safarda' %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1"><i class="bi bi-airplane me-1"></i>Safarda</span>
+                                    {% elif abs.absence_reason == 'oilaviy' %}
+                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1"><i class="bi bi-people me-1"></i>Oilaviy sabablar</span>
+                                    {% elif abs.absence_reason == 'sababsiz' %}
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"><i class="bi bi-question-circle me-1"></i>Sababsiz</span>
+                                    {% elif abs.absence_reason == 'boshqa' %}
+                                        <span class="badge bg-dark-subtle text-dark border border-dark-subtle px-2 py-1"><i class="bi bi-three-dots me-1"></i>Boshqa</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Kelmadi</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ abs.notes|default:"-" }}</td>
+                                <td>
+                                    {% if abs.marked_by %}
+                                        <div class="fw-semibold">{{ abs.marked_by.get_full_name|default:abs.marked_by.username }}</div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">{{ abs.marked_at|date:"Y-m-d H:i" }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'attendance:lesson_attendance' abs.lesson.id %}" class="btn btn-sm btn-outline-primary" title="Dars jurnalini ochish">
+                                        <i class="bi bi-journal-check me-1"></i>Jurnal
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-5 text-muted">
+                                    <i class="bi bi-check-circle text-success fs-2 d-block mb-2"></i>
+                                    Ushbu o‘quvchida qatnashmaslik holatlari mavjud emas. Davomat namunali!
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>

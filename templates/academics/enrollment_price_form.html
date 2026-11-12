@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Individual narxni belgilash: {{ enrollment.student.full_name }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'academics:groups_list' %}">Guruhlar</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'academics:group_detail' enrollment.group.id %}">{{ enrollment.group.name }}</a></li>
+    <li class="breadcrumb-item active">Individual narx</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <!-- Student & Group Summary Card -->
+        <div class="card shadow-sm border-0 mb-4 bg-light">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-tag-fill me-2"></i>Individual ta'lim narxini belgilash
+                    </h5>
+                    <span class="badge bg-primary text-white">Guruh: {{ enrollment.group.name }}</span>
+                </div>
+                <div class="row g-2 p-3 bg-white rounded-3 shadow-xs">
+                    <div class="col-sm-6">
+                        <span class="text-muted small">O‘quvchi:</span>
+                        <div class="fw-bold fs-6">{{ enrollment.student.full_name }}</div>
+                        <div class="text-muted small">{{ enrollment.student.phone }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <span class="text-muted small">Kursning standart narxi:</span>
+                        <div class="fw-bold text-dark fs-6">{{ enrollment.standard_price|uzs }}</div>
+                        <div class="text-muted small">{{ enrollment.group.course.name }}</div>
+                    </div>
+                    <div class="col-sm-6 mt-2 pt-2 border-top">
+                        <span class="text-muted small">Amaldagi oylik narx:</span>
+                        <div class="fw-bold text-primary">{{ enrollment.monthly_price|uzs }}</div>
+                    </div>
+                    <div class="col-sm-6 mt-2 pt-2 border-top">
+                        <span class="text-muted small">Holati:</span>
+                        <div>
+                            {% if enrollment.is_custom_price %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                    Individual (Standartdan farqli)
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    Standart narx
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0">Yangi narx va o‘zgartirish sababi</h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ redirect_url }}">
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger shadow-sm">
+                            {% for err in form.non_field_errors %}
+                                <div>{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="{{ form.monthly_price.id_for_label }}">
+                            {{ form.monthly_price.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.monthly_price }}
+                        {% if form.monthly_price.errors %}
+                            <div class="text-danger small mt-1">{{ form.monthly_price.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text small">Kursning standart narxi: <strong>{{ enrollment.standard_price|uzs }}</strong>.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="{{ form.reason_category.id_for_label }}">
+                            {{ form.reason_category.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.reason_category }}
+                        {% if form.reason_category.errors %}
+                            <div class="text-danger small mt-1">{{ form.reason_category.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="{{ form.reason_details.id_for_label }}">
+                            {{ form.reason_details.label }}
+                        </label>
+                        {{ form.reason_details }}
+                        {% if form.reason_details.errors %}
+                            <div class="text-danger small mt-1">{{ form.reason_details.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text small">Masalan: 20% chegirma, boquvchisini yo‘qotganlik imtiyozi, qaror №5 va h.k.</div>
+                    </div>
+
+                    <div class="form-check p-3 bg-light rounded-3 mb-4 border">
+                        {{ form.update_current_unpaid_charge }}
+                        <label class="form-check-label small fw-semibold ms-2" for="{{ form.update_current_unpaid_charge.id_for_label }}">
+                            {{ form.update_current_unpaid_charge.label }}
+                        </label>
+                        <div class="text-muted small ms-4 mt-1">
+                            <i class="bi bi-shield-check me-1 text-success"></i>O‘tmishdagi yopilgan / to‘langan oylar qayta hisoblanmaydi.
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{{ redirect_url }}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Individual narxni saqlash
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

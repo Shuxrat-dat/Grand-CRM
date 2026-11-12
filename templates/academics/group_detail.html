@@ -69,39 +69,64 @@
 <div class="row g-4">
     <!-- Left Column: Schedules & Lesson History -->
     <div class="col-lg-5">
-        <!-- Group Schedules -->
+        <!-- Group Schedules (Task 6) -->
         <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h6 class="fw-bold mb-0"><i class="bi bi-clock text-primary me-2"></i>Dars jadvali</h6>
-                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addScheduleCollapse">
-                    <i class="bi bi-plus-lg me-1"></i> Vaqt qo'shish
-                </button>
+                <div class="d-flex gap-1">
+                    <a href="{% url 'academics:schedule_calendar' %}?group={{ group.id }}" class="btn btn-sm btn-outline-secondary" title="Guruh taqvimi">
+                        <i class="bi bi-calendar3"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#generateLessonsModal" title="Darslarni generatsiya qilish">
+                        <i class="bi bi-lightning-charge me-1"></i> Darslar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#addScheduleCollapse">
+                        <i class="bi bi-plus-lg me-1"></i> Slot
+                    </button>
+                </div>
             </div>
 
-            <!-- Add Schedule Form Collapse -->
+            <!-- Add Schedule Form Collapse (Supports Multi-day selection) -->
             <div class="collapse p-3 bg-light border-bottom" id="addScheduleCollapse">
-                <form method="post" action="{% url 'academics:group_schedule_add' group.id %}">
+                <form method="post" action="{% url 'academics:schedule_slot_create' %}">
                     {% csrf_token %}
-                    <div class="row g-2">
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold">Hafta kuni</label>
-                            {{ schedule_form.weekday }}
+                    <input type="hidden" name="group" value="{{ group.id }}">
+                    <input type="hidden" name="next" value="{% url 'academics:group_detail' group.id %}">
+                    
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold mb-1">Hafta kunlari (Bir nechta tanlash mumkin):</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for val, label in multi_schedule_form.fields.weekdays.choices %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="weekdays" id="w_{{ val }}" value="{{ val }}">
+                                    <label class="form-check-label small" for="w_{{ val }}">{{ label }}</label>
+                                </div>
+                            {% endfor %}
                         </div>
+                    </div>
+
+                    <div class="row g-2">
                         <div class="col-6">
                             <label class="form-label small fw-semibold">Boshlanish</label>
-                            {{ schedule_form.start_time }}
+                            <input type="time" name="start_time" class="form-control form-control-sm" required>
                         </div>
                         <div class="col-6">
                             <label class="form-label small fw-semibold">Tugash</label>
-                            {{ schedule_form.end_time }}
+                            <input type="time" name="end_time" class="form-control form-control-sm" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label small fw-semibold">Auditoriya / Xona</label>
-                            {{ schedule_form.room }}
+                            <input type="text" name="room" class="form-control form-control-sm" placeholder="Masalan: 201-xona">
+                        </div>
+                        <div class="col-12 mt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="slotActiveCheck" checked>
+                                <label class="form-check-label small" for="slotActiveCheck">Faol holatda saqlash</label>
+                            </div>
                         </div>
                         <div class="col-12 mt-3">
-                            <button type="submit" class="btn btn-sm btn-primary w-100">
-                                Jadvalga kiritish (To'qnashuv tekshiriladi)
+                            <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">
+                                <i class="bi bi-calendar-plus me-1"></i> Jadvalga kiritish (To'qnashuv tekshiriladi)
                             </button>
                         </div>
                     </div>
@@ -111,19 +136,44 @@
             <div class="card-body p-0">
                 <ul class="list-group list-group-flush">
                     {% for sch in schedules %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                    <li class="list-group-item d-flex justify-content-between align-items-center p-3 {% if not sch.is_active %}bg-light opacity-75{% endif %}">
                         <div>
-                            <div class="fw-bold text-dark">{{ sch.get_weekday_display }}</div>
-                            <div class="text-muted small">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold text-dark">{{ sch.get_weekday_display }}</span>
+                                {% if sch.is_active %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle py-0" style="font-size: 0.68rem;">Faol</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle py-0" style="font-size: 0.68rem;">O‘chirilgan</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-muted small mt-1">
                                 <i class="bi bi-clock me-1"></i> {{ sch.start_time|time:"H:i" }} - {{ sch.end_time|time:"H:i" }}
                                 {% if sch.room %}| <i class="bi bi-geo-alt me-1"></i> {{ sch.room }}{% endif %}
                             </div>
                         </div>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Haftalik dars</span>
+                        <div class="d-flex align-items-center gap-1">
+                            <form method="post" action="{% url 'academics:schedule_slot_toggle' sch.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{% url 'academics:group_detail' group.id %}">
+                                <button type="submit" class="btn btn-sm {% if sch.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" title="{% if sch.is_active %}Vaqtincha o‘chirish{% else %}Faollashtirish{% endif %}">
+                                    <i class="bi {% if sch.is_active %}bi-pause-fill{% else %}bi-play-fill{% endif %}"></i>
+                                </button>
+                            </form>
+                            <a href="{% url 'academics:schedule_slot_edit' sch.id %}?next={% url 'academics:group_detail' group.id %}" class="btn btn-sm btn-outline-secondary" title="Tahrirlash">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="post" action="{% url 'academics:schedule_slot_delete' sch.id %}" onsubmit="return confirm('Ushbu jadval slotini o‘chirmoqchimisiz?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{% url 'academics:group_detail' group.id %}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="O‘chirish">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
                     </li>
                     {% empty %}
                     <li class="list-group-item text-center py-4 text-muted small">
-                        Dars jadvali belgilanmagan. Yuqoridagi tugma orqali vaqt qo'shing.
+                        Dars jadvali belgilanmagan. Yuqoridagi «Slot» tugmasi orqali vaqt qo'shing.
                     </li>
                     {% endfor %}
                 </ul>
@@ -142,7 +192,10 @@
                     <li class="list-group-item d-flex justify-content-between align-items-center p-3">
                         <div>
                             <div class="fw-bold text-dark">{{ lesson.date|date:"Y-m-d" }} ({{ lesson.starts_at|time:"H:i" }})</div>
-                            <div class="text-muted small">{{ lesson.topic|default:"Mavzu kiritilmagan" }}</div>
+                            <div class="text-muted small">
+                                {% if lesson.room %}<span class="badge bg-light text-dark border me-1">{{ lesson.room }}</span>{% endif %}
+                                {{ lesson.topic|default:"Mavzu kiritilmagan" }}
+                            </div>
                         </div>
                         <a href="{% url 'attendance:lesson_attendance' lesson.id %}" class="btn btn-sm btn-outline-success">
                             Davomat ({{ lesson.attendances.count }})
@@ -156,11 +209,14 @@
         </div>
     </div>
 
-    <!-- Right Column: Enrolled Students -->
+    <!-- Right Column: Enrolled Students & Individual Pricing (Task 5) -->
     <div class="col-lg-7">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Guruhdagi o‘quvchilar ({{ enrollments.count }})</h6>
+                <div>
+                    <h6 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Guruhdagi o‘quvchilar ({{ enrollments.count }})</h6>
+                    <div class="text-muted small">Standart kurs narxi: <strong>{{ group.course.default_monthly_price|uzs }}</strong></div>
+                </div>
                 <a href="{% url 'academics:group_enroll_student' group.id %}" class="btn btn-sm btn-primary">
                     <i class="bi bi-person-plus-fill me-1"></i> O'quvchi qo'shish
                 </a>
@@ -168,12 +224,12 @@
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th>O‘quvchi F.I.SH.</th>
                                 <th>Telefon</th>
-                                <th>Oylik narxi</th>
-                                <th>Qo‘shilgan sana</th>
+                                <th style="min-width: 170px;">Oylik narx (Individual)</th>
+                                <th>To‘lov holati</th>
                                 <th class="text-end">Amallar</th>
                             </tr>
                         </thead>
@@ -186,10 +242,90 @@
                                     </a>
                                 </td>
                                 <td>{{ enr.student.phone }}</td>
-                                <td class="fw-semibold text-primary">{{ enr.monthly_price|uzs }}</td>
-                                <td>{{ enr.start_date|date:"Y-m-d" }}</td>
+                                <td>
+                                    {% if enr.is_custom_price %}
+                                        <div class="fw-bold text-primary">{{ enr.monthly_price|uzs }}</div>
+                                        <div class="text-muted small">
+                                            <del>{{ enr.standard_price|uzs }}</del> 
+                                            {% if enr.discount_amount %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">-{{ enr.discount_amount|uzs }}</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if enr.custom_price_reason %}
+                                            <div class="text-muted small text-truncate" style="max-width: 160px;" title="{{ enr.custom_price_reason }}">
+                                                <i class="bi bi-info-circle me-1"></i>{{ enr.custom_price_reason }}
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="fw-semibold text-dark">{{ enr.monthly_price|uzs }}</div>
+                                        <span class="badge bg-light text-muted border" style="font-size: 0.68rem;">Standart narx</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm {% if enr.payment_status == 'paid' %}btn-success text-white{% else %}btn-danger text-white{% endif %} dropdown-toggle py-1 px-2 rounded-pill fw-medium payment-status-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8rem;" id="paymentStatusBtn_{{ enr.id }}" title="To'lov holatini o'zgartirish">
+                                            {% if enr.payment_status == 'paid' %}
+                                                <i class="bi bi-check-circle-fill me-1"></i>To‘landi
+                                            {% else %}
+                                                <i class="bi bi-x-circle-fill me-1"></i>To‘lanmadi
+                                            {% endif %}
+                                        </button>
+                                        <ul class="dropdown-menu shadow-sm border-0 dropdown-menu-start">
+                                            <li><h6 class="dropdown-header small text-muted">To'lov holatini o'zgartirish</h6></li>
+                                            <li>
+                                                <form method="post" action="{% url 'academics:enrollment_update_payment_status' enr.id %}" class="payment-status-form">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="payment_status" value="paid">
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-success py-2 {% if enr.payment_status == 'paid' %}active bg-success text-white{% endif %}">
+                                                        <i class="bi bi-check-circle-fill"></i> <strong>To‘landi</strong>
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form method="post" action="{% url 'academics:enrollment_update_payment_status' enr.id %}" class="payment-status-form">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="payment_status" value="unpaid">
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-danger py-2 {% if enr.payment_status == 'unpaid' %}active bg-danger text-white{% endif %}">
+                                                        <i class="bi bi-x-circle-fill"></i> <strong>To‘lanmadi</strong>
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-1">
+                                        <!-- Individual Price Actions Dropdown -->
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="dropdown" title="Individual narx boshqaruvi">
+                                                <i class="bi bi-tag"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                                <li><h6 class="dropdown-header small text-muted">Narx boshqaruvi</h6></li>
+                                                <li>
+                                                    <a class="dropdown-item py-2" href="{% url 'academics:enrollment_update_price' enr.id %}?next={% url 'academics:group_detail' group.id %}">
+                                                        <i class="bi bi-pencil me-2 text-primary"></i>Individual narx belgilash
+                                                    </a>
+                                                </li>
+                                                {% if enr.is_custom_price %}
+                                                <li>
+                                                    <form method="post" action="{% url 'academics:enrollment_revert_price' enr.id %}" onsubmit="return confirm('O‘quvchi narxini standart kurs narxiga qaytarmoqchimisiz?');">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="next" value="{% url 'academics:group_detail' group.id %}">
+                                                        <button type="submit" class="dropdown-item py-2 text-warning">
+                                                            <i class="bi bi-arrow-counterclockwise me-2"></i>Standart narxga qaytarish
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                {% endif %}
+                                                <li>
+                                                    <a class="dropdown-item py-2" href="{% url 'academics:enrollment_price_history' enr.id %}">
+                                                        <i class="bi bi-clock-history me-2 text-secondary"></i>Narx o‘zgarishlari tarixi
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+
                                         <a href="{% url 'billing:student_payment_create' enr.student.id %}" class="btn btn-sm btn-outline-success" title="To'lov">
                                             <i class="bi bi-cash"></i>
                                         </a>
@@ -220,4 +356,94 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Generate Lessons (Task 6) -->
+<div class="modal fade" id="generateLessonsModal" tabindex="-1" aria-labelledby="generateLessonsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="generateLessonsModalLabel">
+                    <i class="bi bi-lightning-charge me-1"></i> Darslarni generatsiya qilish
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Yopish"></button>
+            </div>
+            <form method="post" action="{% url 'academics:generate_lessons' %}">
+                {% csrf_token %}
+                <input type="hidden" name="group" value="{{ group.id }}">
+                <input type="hidden" name="next" value="{% url 'academics:group_detail' group.id %}">
+                
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        Guruhning faol dars jadvali slotlari asosida tanlangan davr uchun darslar avtomatik shakllantiriladi. Avval yaratilgan darslar takrorlanmaydi.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Boshlanish sanasi</label>
+                        {{ lesson_generate_form.start_date }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Tugash sanasi</label>
+                        {{ lesson_generate_form.end_date }}
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4">
+                        <i class="bi bi-lightning-charge me-1"></i> Generatsiya qilish
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.payment-status-form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const actionUrl = form.getAttribute('action');
+            const dropdown = form.closest('.dropdown');
+            const toggleBtn = dropdown.querySelector('.payment-status-btn');
+
+            fetch(actionUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.is_paid) {
+                        toggleBtn.className = 'btn btn-sm btn-success text-white dropdown-toggle py-1 px-2 rounded-pill fw-medium payment-status-btn';
+                        toggleBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>To‘landi';
+                    } else {
+                        toggleBtn.className = 'btn btn-sm btn-danger text-white dropdown-toggle py-1 px-2 rounded-pill fw-medium payment-status-btn';
+                        toggleBtn.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>To‘lanmadi';
+                    }
+                    dropdown.querySelectorAll('.dropdown-item').forEach(btn => {
+                        btn.classList.remove('active', 'bg-success', 'bg-danger', 'text-white');
+                    });
+                    const activeBtn = form.querySelector('.dropdown-item');
+                    if (activeBtn) {
+                        activeBtn.classList.add('active', data.is_paid ? 'bg-success' : 'bg-danger', 'text-white');
+                    }
+                    const bsDropdown = bootstrap.Dropdown.getInstance(toggleBtn);
+                    if (bsDropdown) bsDropdown.hide();
+                } else {
+                    form.submit();
+                }
+            })
+            .catch(() => {
+                form.submit();
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

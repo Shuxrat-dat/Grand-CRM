@@ -169,6 +169,7 @@ class GroupSchedule(models.Model):
     start_time = models.TimeField(verbose_name="Boshlanish vaqti")
     end_time = models.TimeField(verbose_name="Tugash vaqti")
     room = models.CharField(max_length=100, blank=True, verbose_name="Xona / Auditoriya")
+    is_active = models.BooleanField(default=True, verbose_name="Faol holatda")
 
     class Meta:
         verbose_name = "Dars jadvali"
@@ -180,7 +181,8 @@ class GroupSchedule(models.Model):
             raise ValidationError("Dars tugash vaqti boshlanish vaqtidan kechroq bo'lishi shart.")
 
     def __str__(self):
-        return f"{self.group.name}: {self.get_weekday_display()} {self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
+        status_suffix = "" if self.is_active else " (Nofaol)"
+        return f"{self.group.name}: {self.get_weekday_display()} {self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}{status_suffix}"
 
 
 class Enrollment(models.Model):
@@ -189,6 +191,10 @@ class Enrollment(models.Model):
         TRANSFERRED = 'transferred', "Ko'chirilgan"
         COMPLETED = 'completed', 'Yakunlangan'
         DROPPED = 'dropped', "To'xtatilgan"
+
+    class PaymentStatus(models.TextChoices):
+        PAID = 'paid', 'To‘landi'
+        UNPAID = 'unpaid', 'To‘lanmadi'
 
     student = models.ForeignKey(
         'students.Student',
@@ -209,11 +215,22 @@ class Enrollment(models.Model):
         decimal_places=2,
         verbose_name="Kelishilgan oylik narx"
     )
+    custom_price_reason = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Narx o'zgarish sababi"
+    )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
         default=Status.ACTIVE,
         verbose_name="A'zolik holati"
+    )
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.UNPAID,
+        verbose_name="To‘lov holati"
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan")
@@ -233,5 +250,72 @@ class Enrollment(models.Model):
             self.monthly_price = self.group.course.default_monthly_price
         super().save(*args, **kwargs)
 
+    @property
+    def standard_price(self) -> Decimal:
+        if self.group and self.group.course:
+            return self.group.course.default_monthly_price
+        return Decimal('0.00')
+
+    @property
+    def is_custom_price(self) -> bool:
+        return bool(self.monthly_price and self.standard_price and self.monthly_price != self.standard_price)
+
+    @property
+    def discount_amount(self) -> Decimal:
+        if self.standard_price > self.monthly_price:
+            return self.standard_price - self.monthly_price
+        return Decimal('0.00')
+
     def __str__(self):
         return f"{self.student.full_name} -> {self.group.name} ({self.monthly_price} so'm)"
+
+
+class EnrollmentPriceHistory(models.Model):
+    class ReasonCategory(models.TextChoices):
+        DISCOUNT = 'discount', 'Chegirma (Скидка)'
+        BENEFIT = 'benefit', 'Imtiyoz (Льгота)'
+        OWNER_DECISION = 'owner_decision', 'Rahbar qarori (Решение владельца)'
+        SPECIAL_TERMS = 'special_terms', 'Maxsus shartlar (Индивидуальные условия)'
+        REVERT_STANDARD = 'revert_standard', 'Standart narxga qaytarildi'
+        OTHER = 'other', 'Boshqa (Другое)'
+
+    enrollment = models.ForeignKey(
+        Enrollment,
+        on_delete=models.CASCADE,
+        related_name='price_histories',
+        verbose_name="A'zolik"
+    )
+    old_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Oldingi narx"
+    )
+    new_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Yangi narx"
+    )
+    reason = models.CharField(
+        max_length=255,
+        verbose_name="O'zgartirish sababi"
+    )
+    changed_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="O'zgartirilgan vaqt"
+    )
+    changed_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='enrollment_price_changes',
+        verbose_name="O'zgartirgan xodim"
+    )
+
+    class Meta:
+        verbose_name = "A'zolik narxi tarixi"
+        verbose_name_plural = "A'zolik narxlari tarixlari"
+        ordering = ['-changed_at']
+
+    def __str__(self):
+        return f"{self.enrollment.student.full_name}: {self.old_price} -> {self.new_price} ({self.reason})"

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Lidni o‘quvchiga aylantirish: {{ lead.full_name }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'leads:leads_list' %}">Lidlar</a></li>
+    <li class="breadcrumb-item active">O‘quvchiga aylantirish</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Lead Information Banner -->
+        <div class="card shadow-sm border-0 mb-4 bg-primary-subtle border-primary-subtle">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-person-check-fill me-2"></i>Lidni o‘quvchiga aylantirish
+                    </h5>
+                    <span class="badge bg-primary text-white px-2 py-1">Konvertatsiya</span>
+                </div>
+                <p class="text-dark mb-3">
+                    Ushbu amal orqali tizim avtomatik ravishda mavjud <strong>«O‘quvchilar»</strong> bo‘limida yangi o‘quvchi yaratadi va uni siz tanlagan guruhga a'zo qiladi.
+                </p>
+                <div class="row g-2 p-3 bg-white rounded-3 shadow-xs">
+                    <div class="col-sm-6">
+                        <span class="text-muted small">Lid F.I.SH.:</span>
+                        <div class="fw-bold">{{ lead.full_name }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <span class="text-muted small">Telefon raqami:</span>
+                        <div class="fw-bold">{{ lead.phone }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <span class="text-muted small">Qiziqqan kursi:</span>
+                        <div class="fw-bold">{{ lead.course.name|default:"Tanlanmagan" }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <span class="text-muted small">Murojaat manbasi:</span>
+                        <div>{{ lead.get_source_display }}</div>
+                    </div>
+                    {% if lead.notes %}
+                    <div class="col-12 mt-2 pt-2 border-top">
+                        <span class="text-muted small">Lid izohi:</span>
+                        <div class="small text-secondary">{{ lead.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Conversion Form -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0">Guruh va a'zolik ma'lumotlarini tanlang</h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" id="convertForm">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger shadow-sm">
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="row g-3">
+                        <!-- Group Selection -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" for="{{ form.group.id_for_label }}">
+                                {{ form.group.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.group }}
+                            {% if form.group.errors %}
+                                <div class="text-danger small mt-1">{{ form.group.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">O‘quvchi ta'lim oladigan guruhni tanlang.</div>
+                        </div>
+
+                        <!-- Start Date -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="{{ form.start_date.id_for_label }}">
+                                {{ form.start_date.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.start_date }}
+                            {% if form.start_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.start_date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Monthly Price -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="{{ form.monthly_price.id_for_label }}">
+                                {{ form.monthly_price.label }}
+                            </label>
+                            {{ form.monthly_price }}
+                            {% if form.monthly_price.errors %}
+                                <div class="text-danger small mt-1">{{ form.monthly_price.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text small">{{ form.monthly_price.help_text }}</div>
+                        </div>
+
+                        <!-- Parent Phone -->
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold" for="{{ form.parent_phone.id_for_label }}">
+                                {{ form.parent_phone.label }}
+                            </label>
+                            {{ form.parent_phone }}
+                            {% if form.parent_phone.errors %}
+                                <div class="text-danger small mt-1">{{ form.parent_phone.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'leads:leads_list' %}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-success px-4 shadow-sm" onclick="return confirm('Rostdan ham ushbu lidni o‘quvchiga aylantirib, guruhga qo‘shmoqchimisiz?');">
+                            <i class="bi bi-person-check me-1"></i> O‘quvchiga aylantirish
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

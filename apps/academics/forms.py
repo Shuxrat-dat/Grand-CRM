@@ -1,7 +1,9 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Course, Teacher, TeacherSalaryRate, StudyGroup, GroupSchedule, Enrollment
+from django.utils import timezone
+from .models import Course, Teacher, TeacherSalaryRate, StudyGroup, GroupSchedule, Enrollment, EnrollmentPriceHistory
 from apps.students.models import Student
+from apps.accounts.widgets import DynamicSearchSelect
 
 
 class CourseForm(forms.ModelForm):
@@ -67,7 +69,11 @@ class StudyGroupForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Masalan: IELTS 10:00 (Du-Chor-Ju)'}),
             'course': forms.Select(attrs={'class': 'form-select'}),
-            'teacher': forms.Select(attrs={'class': 'form-select'}),
+            'teacher': DynamicSearchSelect(
+                search_url='/api/search/teachers/',
+                model=Teacher,
+                placeholder="O'qituvchini qidirish (kamida 3 ta harf)..."
+            ),
             'capacity': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -87,36 +93,138 @@ class StudyGroupForm(forms.ModelForm):
 class GroupScheduleForm(forms.ModelForm):
     class Meta:
         model = GroupSchedule
-        fields = ['weekday', 'start_time', 'end_time', 'room']
+        fields = ['weekday', 'start_time', 'end_time', 'room', 'is_active']
         widgets = {
             'weekday': forms.Select(attrs={'class': 'form-select'}),
             'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'room': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '2-xona'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {
             'weekday': "Hafta kuni",
             'start_time': "Boshlanish vaqti",
             'end_time': "Tugash vaqti",
             'room': "Auditoriya / Xona",
+            'is_active': "Faol holatda",
         }
+
+
+class GroupScheduleMultiSlotForm(forms.Form):
+    group = forms.ModelChoiceField(
+        queryset=StudyGroup.objects.filter(is_active=True).order_by('name'),
+        label="Guruh",
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        empty_label="-- Guruhni tanlang --"
+    )
+    weekdays = forms.MultipleChoiceField(
+        choices=GroupSchedule.Weekday.choices,
+        label="Hafta kunlari",
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'})
+    )
+    start_time = forms.TimeField(
+        label="Boshlanish vaqti",
+        widget=forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'})
+    )
+    end_time = forms.TimeField(
+        label="Tugash vaqti",
+        widget=forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'})
+    )
+    room = forms.CharField(
+        label="Xona / Auditoriya",
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Masalan: 102-xona'})
+    )
+    is_active = forms.BooleanField(
+        label="Faol holatda",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get('start_time')
+        end = cleaned_data.get('end_time')
+        if start and end and end <= start:
+            raise ValidationError("Dars tugash vaqti boshlanish vaqtidan kechroq bo'lishi shart.")
+        return cleaned_data
+
+
+class LessonGenerateForm(forms.Form):
+    group = forms.ModelChoiceField(
+        queryset=StudyGroup.objects.filter(is_active=True).order_by('name'),
+        required=False,
+        label="Guruh",
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        empty_label="-- Barcha faol guruhlar uchun --"
+    )
+    start_date = forms.DateField(
+        label="Boshlanish sanasi",
+        initial=timezone.now().date,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+    end_date = forms.DateField(
+        label="Tugash sanasi",
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get('start_date')
+        end = cleaned_data.get('end_date')
+        if start and end and end < start:
+            raise ValidationError("Tugash sanasi boshlanish sanasidan oldin bo'lishi mumkin emas.")
+        return cleaned_data
+
+
+class EnrollmentPriceUpdateForm(forms.Form):
+    monthly_price = forms.DecimalField(
+        label="Yangi individual oylik narx (so'm)",
+        min_value=0,
+        max_digits=12,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Masalan: 350000'})
+    )
+    reason_category = forms.ChoiceField(
+        choices=EnrollmentPriceHistory.ReasonCategory.choices,
+        label="O'zgartirish sababi",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    reason_details = forms.CharField(
+        label="Qo'shimcha izoh / asos",
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Masalan: Rahbar buyrug‘i №12 yoki 20% chegirma'})
+    )
+    update_current_unpaid_charge = forms.BooleanField(
+        label="Joriy oydagi to'lanmagan oylik hisobni yangi narxga moslashtirish (to'langan hisoblar o'zgarmaydi)",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
 
 class EnrollmentForm(forms.ModelForm):
     class Meta:
         model = Enrollment
-        fields = ['student', 'group', 'start_date', 'monthly_price']
+        fields = ['student', 'group', 'start_date', 'monthly_price', 'payment_status']
         widgets = {
-            'student': forms.Select(attrs={'class': 'form-select'}),
+            'student': DynamicSearchSelect(
+                search_url='/api/search/students/',
+                model=Student,
+                placeholder="O'quvchini qidirish (kamida 3 ta harf)..."
+            ),
             'group': forms.Select(attrs={'class': 'form-select'}),
             'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'monthly_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': "Bo'sh qoldirilsa kurs narxi olinadi"}),
+            'payment_status': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
             'student': "O'quvchi",
             'group': "Guruh",
             'start_date': "Boshlash sanasi",
             'monthly_price': "Kelishilgan oylik narx (so'm)",
+            'payment_status': "To‘lov holati",
         }
 
     def clean(self):

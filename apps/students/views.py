@@ -62,7 +62,8 @@ def student_detail_view(request, student_id):
             'enrollments__group__teacher',
             'monthly_charges__allocations',
             'payments__allocations',
-            'attendances__lesson__group'
+            'attendances__lesson__group',
+            'attendances__marked_by'
         ),
         id=student_id
     )
@@ -70,7 +71,8 @@ def student_detail_view(request, student_id):
     charges = student.monthly_charges.all().order_by('-billing_month')
     payments = student.payments.all().order_by('-paid_at')
     enrollments = student.enrollments.all().order_by('-created_at')
-    attendances = student.attendances.all().select_related('lesson', 'lesson__group').order_by('-lesson__date')[:15]
+    attendances = student.attendances.all().select_related('lesson', 'lesson__group', 'marked_by').order_by('-lesson__date')[:25]
+    absences = student.attendances.filter(status='absent').select_related('lesson', 'lesson__group', 'marked_by').order_by('-lesson__date')
 
     return render(request, 'students/student_detail.html', {
         'student': student,
@@ -78,6 +80,8 @@ def student_detail_view(request, student_id):
         'payments': payments,
         'enrollments': enrollments,
         'attendances': attendances,
+        'absences': absences,
+        'absences_count': absences.count(),
     })
 
 

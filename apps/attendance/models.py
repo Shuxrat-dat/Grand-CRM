@@ -25,6 +25,7 @@ class Lesson(models.Model):
         default=Status.SCHEDULED,
         verbose_name="Dars holati"
     )
+    room = models.CharField(max_length=100, blank=True, verbose_name="Xona / Auditoriya")
     topic = models.CharField(max_length=255, blank=True, verbose_name="Dars mavzusi")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan")
 
@@ -54,6 +55,13 @@ class AttendanceRecord(models.Model):
         LATE = 'late', 'Kechikdi'
         EXCUSED = 'excused', 'Sababli'
 
+    class AbsenceReason(models.TextChoices):
+        BEMOR = 'bemor', 'Bemor'
+        SAFARDA = 'safarda', 'Safarda'
+        OILAVIY = 'oilaviy', 'Oilaviy sabablar'
+        SABABSIZ = 'sababsiz', 'Sababsiz'
+        BOSHQA = 'boshqa', 'Boshqa'
+
     lesson = models.ForeignKey(
         Lesson,
         on_delete=models.CASCADE,
@@ -71,6 +79,12 @@ class AttendanceRecord(models.Model):
         choices=Status.choices,
         default=Status.PRESENT,
         verbose_name="Davomat holati"
+    )
+    absence_reason = models.CharField(
+        max_length=50,
+        blank=True,
+        choices=AbsenceReason.choices,
+        verbose_name="Qatnashmaslik sababi"
     )
     notes = models.CharField(max_length=255, blank=True, verbose_name="Qayd / Izoh")
     marked_by = models.ForeignKey(

@@ -32,57 +32,72 @@
     </div>
 </div>
 
-<form method="post">
+<form method="post" id="attendanceForm">
     {% csrf_token %}
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
             <h6 class="fw-bold mb-0">O'quvchilar ro'yxati ({{ attendance_rows|length }} nafar)</h6>
-            <span class="text-muted small">O'zgartirishlar audit jurnalida qayd etiladi</span>
+            <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Kelmadi (absent) deb belgilanganda sabab va izoh kiritish majburiy</span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead>
+                    <thead class="table-light">
                         <tr>
                             <th style="width: 50px;">#</th>
                             <th>O‘quvchi F.I.SH.</th>
                             <th>Telefon</th>
                             <th style="width: 320px;">Davomat holati</th>
-                            <th>Izoh / Sabab</th>
+                            <th style="min-width: 280px;">Sabab va Izoh</th>
                             <th>Oxirgi belgilagan</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for row in attendance_rows %}
-                        <tr>
+                        <tr id="row_{{ row.student.id }}" class="{% if row.status == 'absent' %}table-danger-subtle{% endif %}">
                             <td class="text-muted">{{ forloop.counter }}</td>
                             <td>
-                                <a href="{% url 'students:student_detail' row.student.id %}" class="fw-bold text-decoration-none text-dark">
-                                    {{ row.student.full_name }}
-                                </a>
+                                <div class="d-flex align-items-center gap-2">
+                                    <a href="{% url 'students:student_detail' row.student.id %}" class="fw-bold text-decoration-none text-dark">
+                                        {{ row.student.full_name }}
+                                    </a>
+                                    <a href="{% url 'attendance:student_absences' row.student.id %}" target="_blank" class="badge bg-light text-secondary border text-decoration-none" title="Qatnashmasliklar tarixini ko‘rish">
+                                        <i class="bi bi-clock-history me-1"></i>Tarix
+                                    </a>
+                                </div>
                             </td>
                             <td>{{ row.student.phone }}</td>
                             <td>
                                 <div class="btn-group w-100" role="group">
-                                    <input type="radio" class="btn-check" name="status_{{ row.student.id }}" id="present_{{ row.student.id }}" value="present" {% if row.status == 'present' %}checked{% endif %}>
+                                    <input type="radio" class="btn-check status-radio" name="status_{{ row.student.id }}" id="present_{{ row.student.id }}" value="present" data-student-id="{{ row.student.id }}" {% if row.status == 'present' %}checked{% endif %}>
                                     <label class="btn btn-outline-success btn-sm" for="present_{{ row.student.id }}">Qatnashdi</label>
 
-                                    <input type="radio" class="btn-check" name="status_{{ row.student.id }}" id="absent_{{ row.student.id }}" value="absent" {% if row.status == 'absent' %}checked{% endif %}>
+                                    <input type="radio" class="btn-check status-radio" name="status_{{ row.student.id }}" id="absent_{{ row.student.id }}" value="absent" data-student-id="{{ row.student.id }}" {% if row.status == 'absent' %}checked{% endif %}>
                                     <label class="btn btn-outline-danger btn-sm" for="absent_{{ row.student.id }}">Kelmadi</label>
 
-                                    <input type="radio" class="btn-check" name="status_{{ row.student.id }}" id="late_{{ row.student.id }}" value="late" {% if row.status == 'late' %}checked{% endif %}>
+                                    <input type="radio" class="btn-check status-radio" name="status_{{ row.student.id }}" id="late_{{ row.student.id }}" value="late" data-student-id="{{ row.student.id }}" {% if row.status == 'late' %}checked{% endif %}>
                                     <label class="btn btn-outline-warning btn-sm text-dark" for="late_{{ row.student.id }}">Kechikdi</label>
 
-                                    <input type="radio" class="btn-check" name="status_{{ row.student.id }}" id="excused_{{ row.student.id }}" value="excused" {% if row.status == 'excused' %}checked{% endif %}>
+                                    <input type="radio" class="btn-check status-radio" name="status_{{ row.student.id }}" id="excused_{{ row.student.id }}" value="excused" data-student-id="{{ row.student.id }}" {% if row.status == 'excused' %}checked{% endif %}>
                                     <label class="btn btn-outline-secondary btn-sm" for="excused_{{ row.student.id }}">Sababli</label>
                                 </div>
                             </td>
                             <td>
-                                <input type="text" name="note_{{ row.student.id }}" value="{{ row.notes }}" class="form-control form-control-sm" placeholder="Izoh (ixtiyoriy)">
+                                <div class="absence-reason-box" id="reason_box_{{ row.student.id }}" style="display: {% if row.status == 'absent' %}block{% else %}none{% endif %};">
+                                    <select name="reason_{{ row.student.id }}" id="reason_{{ row.student.id }}" class="form-select form-select-sm mb-1 absence-reason-select" data-student-id="{{ row.student.id }}" {% if row.status == 'absent' %}required{% endif %}>
+                                        <option value="">-- Sababni tanlang (Majburiy) --</option>
+                                        <option value="bemor" {% if row.absence_reason == 'bemor' %}selected{% endif %}>Bemor</option>
+                                        <option value="safarda" {% if row.absence_reason == 'safarda' %}selected{% endif %}>Safarda</option>
+                                        <option value="oilaviy" {% if row.absence_reason == 'oilaviy' %}selected{% endif %}>Oilaviy sabablar</option>
+                                        <option value="sababsiz" {% if row.absence_reason == 'sababsiz' %}selected{% endif %}>Sababsiz</option>
+                                        <option value="boshqa" {% if row.absence_reason == 'boshqa' %}selected{% endif %}>Boshqa</option>
+                                    </select>
+                                </div>
+                                <input type="text" name="note_{{ row.student.id }}" id="note_{{ row.student.id }}" value="{{ row.notes }}" class="form-control form-control-sm" placeholder="{% if row.status == 'absent' %}Qatnashmaslik izohi (Majburiy)...{% else %}Qayd / izoh (ixtiyoriy){% endif %}" {% if row.status == 'absent' %}required{% endif %}>
                             </td>
                             <td class="text-muted small">
                                 {% if row.marked_by %}
-                                    {{ row.marked_by.username }}
+                                    {{ row.marked_by.get_full_name|default:row.marked_by.username }}
                                     <div style="font-size: 0.7rem;">{{ row.marked_at|date:"Y-m-d H:i" }}</div>
                                 {% else %}
                                     <span class="text-secondary">-</span>
@@ -108,4 +123,102 @@
         </div>
     </div>
 </form>
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateStudentRow(studentId, isAbsent) {
+        const reasonBox = document.getElementById('reason_box_' + studentId);
+        const reasonSelect = document.getElementById('reason_' + studentId);
+        const noteInput = document.getElementById('note_' + studentId);
+        const row = document.getElementById('row_' + studentId);
+
+        if (isAbsent) {
+            if (reasonBox) reasonBox.style.display = 'block';
+            if (reasonSelect) reasonSelect.required = true;
+            if (noteInput) {
+                noteInput.required = true;
+                noteInput.placeholder = "Qatnashmaslik izohi (Majburiy)...";
+            }
+            if (row) row.classList.add('table-danger-subtle');
+        } else {
+            if (reasonBox) reasonBox.style.display = 'none';
+            if (reasonSelect) {
+                reasonSelect.required = false;
+            }
+            if (noteInput) {
+                noteInput.required = false;
+                noteInput.placeholder = "Qayd / izoh (ixtiyoriy)";
+            }
+            if (row) row.classList.remove('table-danger-subtle');
+        }
+    }
+
+    // Listen to status radio changes
+    document.querySelectorAll('.status-radio').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            const studentId = this.dataset.studentId;
+            const isAbsent = this.value === 'absent';
+            updateStudentRow(studentId, isAbsent);
+        });
+    });
+
+    // Auto-fill note placeholder or default when reason changes
+    document.querySelectorAll('.absence-reason-select').forEach(function(select) {
+        select.addEventListener('change', function() {
+            const studentId = this.dataset.studentId;
+            const noteInput = document.getElementById('note_' + studentId);
+            if (noteInput && (!noteInput.value || noteInput.value.trim() === '')) {
+                const selectedText = this.options[this.selectedIndex]?.text;
+                if (this.value && selectedText && !selectedText.includes('--')) {
+                    noteInput.value = selectedText;
+                }
+            }
+        });
+    });
+
+    // Client-side submit guard
+    document.getElementById('attendanceForm')?.addEventListener('submit', function(e) {
+        let hasError = false;
+        let firstInvalid = null;
+
+        document.querySelectorAll('.status-radio:checked').forEach(function(radio) {
+            if (radio.value === 'absent') {
+                const studentId = radio.dataset.studentId;
+                const reasonSelect = document.getElementById('reason_' + studentId);
+                const noteInput = document.getElementById('note_' + studentId);
+
+                if (!reasonSelect || !reasonSelect.value) {
+                    hasError = true;
+                    if (reasonSelect) {
+                        reasonSelect.classList.add('is-invalid');
+                        if (!firstInvalid) firstInvalid = reasonSelect;
+                    }
+                } else {
+                    reasonSelect.classList.remove('is-invalid');
+                }
+
+                if (!noteInput || !noteInput.value.trim()) {
+                    hasError = true;
+                    if (noteInput) {
+                        noteInput.classList.add('is-invalid');
+                        if (!firstInvalid) firstInvalid = noteInput;
+                    }
+                } else {
+                    noteInput.classList.remove('is-invalid');
+                }
+            }
+        });
+
+        if (hasError) {
+            e.preventDefault();
+            if (firstInvalid) {
+                firstInvalid.focus();
+            }
+            alert("Kelmadi (absent) deb belgilangan har bir o‘quvchi uchun sabab tanlanishi va izoh kiritilishi shart!");
+        }
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

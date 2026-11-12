@@ -17,10 +17,19 @@ def crm_context(request):
     except Exception:
         center_settings = None
 
+    new_leads_count = 0
+    if request.user.is_authenticated:
+        try:
+            from apps.leads.models import Lead
+            new_leads_count = Lead.objects.filter(status=Lead.Status.YANGI).count()
+        except Exception:
+            new_leads_count = 0
+
     return {
         'is_owner': is_owner,
         'is_admin': is_admin,
         'center_settings': center_settings,
+        'new_leads_count': new_leads_count,
         'CURRENCY_CODE': getattr(settings, 'CURRENCY_CODE', 'UZS'),
         'CURRENCY_SYMBOL': getattr(settings, 'CURRENCY_SYMBOL', "so'm"),
     }

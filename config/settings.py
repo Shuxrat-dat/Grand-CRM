@@ -11,7 +11,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('SECRET_KEY', 'grand-crm-insecure-secret-key-change-in-production-2026')
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '*')
+allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '*' if DEBUG else '.onrender.com,.koyeb.app,localhost,127.0.0.1')
 if allowed_hosts_str.strip() == '*':
     ALLOWED_HOSTS = ['*']
 else:
@@ -19,10 +19,30 @@ else:
 
 csrf_origins_str = os.getenv('CSRF_TRUSTED_ORIGINS', 'https://*.onrender.com,https://*.koyeb.app,http://localhost:8000,http://127.0.0.1:8000')
 CSRF_TRUSTED_ORIGINS = [url.strip() for url in csrf_origins_str.split(',') if url.strip()]
-if 'https://*.onrender.com' not in CSRF_TRUSTED_ORIGINS:
-    CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')
+for origin in ['https://*.onrender.com', 'https://*.koyeb.app']:
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Production Security Hardening
+if not DEBUG:
+    if SECRET_KEY == 'grand-crm-insecure-secret-key-change-in-production-2026':
+        import warnings
+        warnings.warn(
+            "CRITICAL: Using default SECRET_KEY in production! Provide a secure SECRET_KEY in environment variables.",
+            RuntimeWarning
+        )
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 'yes')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 
 
 # Application definition
@@ -38,6 +58,7 @@ INSTALLED_APPS = [
 
     # Custom CRM apps
     'apps.accounts',
+    'apps.leads',
     'apps.students',
     'apps.academics',
     'apps.attendance',

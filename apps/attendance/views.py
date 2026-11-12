@@ -63,6 +63,7 @@ def lesson_attendance_view(request, lesson_id):
     """
     Attendance journal for a specific lesson.
     Checks that students were enrolled in the group on the lesson's date.
+    When marked as absent, absence_reason and comment/note are strictly mandatory.
     When a mark is updated, records AuditLog of the change.
     """
     lesson = get_object_or_404(
@@ -85,51 +86,109 @@ def lesson_attendance_view(request, lesson_id):
     }
 
     if request.method == 'POST':
+        errors = []
+        parsed_data = {}
+
+        # First pass: validate all inputs
+        for student in enrolled_students:
+            status_key = f"status_{student.id}"
+            reason_key = f"reason_{student.id}"
+            note_key = f"note_{student.id}"
+
+            new_status = request.POST.get(status_key)
+            new_reason = request.POST.get(reason_key, "").strip()
+            new_note = request.POST.get(note_key, "").strip()
+
+            if new_status:
+                if new_status == AttendanceRecord.Status.ABSENT:
+                    if not new_reason or new_reason not in AttendanceRecord.AbsenceReason.values:
+                        errors.append(f"{student.full_name}: Qatnashmadi deb belgilanganda sabab tanlanishi shart (Bemor, Safarda, Oilaviy sabablar, Sababsiz, Boshqa).")
+                    if not new_note:
+                        errors.append(f"{student.full_name}: Qatnashmadi deb belgilanganda izoh / kommentariy kiritilishi shart.")
+
+                parsed_data[student.id] = {
+                    'status': new_status,
+                    'reason': new_reason if new_status == AttendanceRecord.Status.ABSENT else '',
+                    'note': new_note,
+                }
+
+        if errors:
+            for err in errors:
+                messages.error(request, err)
+            # Render with user entered values
+            attendance_rows = []
+            for student in enrolled_students:
+                item = parsed_data.get(student.id)
+                att = existing_attendances.get(student.id)
+                attendance_rows.append({
+                    'student': student,
+                    'status': item['status'] if item else (att.status if att else 'present'),
+                    'absence_reason': item['reason'] if item else (att.absence_reason if att else ''),
+                    'notes': item['note'] if item else (att.notes if att else ''),
+                    'marked_at': att.marked_at if att else None,
+                    'marked_by': att.marked_by if att else None,
+                })
+            return render(request, 'attendance/lesson_attendance.html', {
+                'lesson': lesson,
+                'attendance_rows': attendance_rows,
+                'status_choices': AttendanceRecord.Status.choices,
+                'absence_reasons': AttendanceRecord.AbsenceReason.choices,
+            })
+
         with transaction.atomic():
             for student in enrolled_students:
-                status_key = f"status_{student.id}"
-                note_key = f"note_{student.id}"
+                if student.id not in parsed_data:
+                    continue
 
-                new_status = request.POST.get(status_key)
-                new_note = request.POST.get(note_key, "").strip()
+                item = parsed_data[student.id]
+                new_status = item['status']
+                new_reason = item['reason']
+                new_note = item['note']
 
-                if new_status:
-                    if student.id in existing_attendances:
-                        att_record = existing_attendances[student.id]
-                        old_status = att_record.status
-                        old_note = att_record.notes
+                if student.id in existing_attendances:
+                    att_record = existing_attendances[student.id]
+                    old_status = att_record.status
+                    old_note = att_record.notes
+                    old_reason = att_record.absence_reason
 
-                        if old_status != new_status or old_note != new_note:
-                            att_record.status = new_status
-                            att_record.notes = new_note
-                            att_record.marked_by = request.user
-                            att_record.save(update_fields=['status', 'notes', 'marked_by', 'updated_at'])
+                    if old_status != new_status or old_note != new_note or old_reason != new_reason:
+                        att_record.status = new_status
+                        att_record.absence_reason = new_reason
+                        att_record.notes = new_note
+                        att_record.marked_by = request.user
+                        att_record.save(update_fields=['status', 'absence_reason', 'notes', 'marked_by', 'updated_at'])
 
-                            log_audit(
-                                actor=request.user,
-                                action='UPDATE',
-                                entity_type='AttendanceRecord',
-                                entity_id=att_record.id,
-                                changes_before={'status': old_status, 'note': old_note},
-                                changes_after={'status': new_status, 'note': new_note},
-                                reason=f"{student.full_name} davomati o'zgartirildi"
-                            )
-                    else:
-                        att_record = AttendanceRecord.objects.create(
-                            lesson=lesson,
-                            student=student,
-                            status=new_status,
-                            notes=new_note,
-                            marked_by=request.user
-                        )
                         log_audit(
                             actor=request.user,
-                            action='CREATE',
+                            action='UPDATE',
                             entity_type='AttendanceRecord',
                             entity_id=att_record.id,
-                            changes_after={'student': student.full_name, 'status': new_status},
-                            reason="Davomat belgilandi"
+                            changes_before={'status': old_status, 'absence_reason': old_reason, 'note': old_note},
+                            changes_after={'status': new_status, 'absence_reason': new_reason, 'note': new_note},
+                            reason=f"{student.full_name} davomati o'zgartirildi"
                         )
+                else:
+                    att_record = AttendanceRecord.objects.create(
+                        lesson=lesson,
+                        student=student,
+                        status=new_status,
+                        absence_reason=new_reason,
+                        notes=new_note,
+                        marked_by=request.user
+                    )
+                    log_audit(
+                        actor=request.user,
+                        action='CREATE',
+                        entity_type='AttendanceRecord',
+                        entity_id=att_record.id,
+                        changes_after={
+                            'student': student.full_name,
+                            'status': new_status,
+                            'absence_reason': new_reason,
+                            'note': new_note
+                        },
+                        reason="Davomat belgilandi"
+                    )
 
             lesson.status = Lesson.Status.COMPLETED
             lesson.save(update_fields=['status'])
@@ -144,6 +203,7 @@ def lesson_attendance_view(request, lesson_id):
         attendance_rows.append({
             'student': student,
             'status': att.status if att else 'present',
+            'absence_reason': att.absence_reason if att else '',
             'notes': att.notes if att else '',
             'marked_at': att.marked_at if att else None,
             'marked_by': att.marked_by if att else None,
@@ -153,6 +213,50 @@ def lesson_attendance_view(request, lesson_id):
         'lesson': lesson,
         'attendance_rows': attendance_rows,
         'status_choices': AttendanceRecord.Status.choices,
+        'absence_reasons': AttendanceRecord.AbsenceReason.choices,
+    })
+
+
+@admin_or_owner_required
+def student_absence_history_view(request, student_id):
+    """
+    Detailed absence history view for a student.
+    Shows reason, comment, date, marked_by admin, and group info.
+    """
+    from apps.students.models import Student
+    student = get_object_or_404(Student, id=student_id)
+
+    absences = AttendanceRecord.objects.filter(
+        student=student,
+        status=AttendanceRecord.Status.ABSENT
+    ).select_related('lesson', 'lesson__group', 'lesson__group__course', 'marked_by').order_by('-lesson__date', '-marked_at')
+
+    # Optional filter by reason
+    reason_filter = request.GET.get('reason', '').strip()
+    if reason_filter:
+        absences = absences.filter(absence_reason=reason_filter)
+
+    # Optional date filters
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+    if date_from:
+        absences = absences.filter(lesson__date__gte=date_from)
+    if date_to:
+        absences = absences.filter(lesson__date__lte=date_to)
+
+    total_absences = AttendanceRecord.objects.filter(
+        student=student,
+        status=AttendanceRecord.Status.ABSENT
+    ).count()
+
+    return render(request, 'attendance/student_absence_history.html', {
+        'student': student,
+        'absences': absences,
+        'total_absences': total_absences,
+        'selected_reason': reason_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'reason_choices': AttendanceRecord.AbsenceReason.choices,
     })
 
 

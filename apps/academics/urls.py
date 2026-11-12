@@ -28,4 +28,17 @@ urlpatterns = [
     path('groups/<int:group_id>/enroll/', views.enroll_student_view, name='group_enroll_student'),
     path('enrollments/<int:enrollment_id>/transfer/', views.transfer_student_view, name='transfer_student'),
     path('enrollments/<int:enrollment_id>/drop/', views.drop_student_view, name='drop_student'),
+    path('enrollments/<int:enrollment_id>/update-payment-status/', views.enrollment_update_payment_status_view, name='enrollment_update_payment_status'),
+    path('enrollments/<int:enrollment_id>/update-price/', views.enrollment_update_price_view, name='enrollment_update_price'),
+    path('enrollments/<int:enrollment_id>/revert-price/', views.enrollment_revert_price_view, name='enrollment_revert_price'),
+    path('enrollments/<int:enrollment_id>/price-history/', views.enrollment_price_history_view, name='enrollment_price_history'),
+
+    # Central Schedules Hub & Lesson Generation (Task 6)
+    path('schedules/', views.schedules_list_view, name='schedules_list'),
+    path('schedules/create/', views.schedule_slot_create_view, name='schedule_slot_create'),
+    path('schedules/<int:slot_id>/edit/', views.schedule_slot_edit_view, name='schedule_slot_edit'),
+    path('schedules/<int:slot_id>/toggle/', views.schedule_slot_toggle_view, name='schedule_slot_toggle'),
+    path('schedules/<int:slot_id>/delete/', views.schedule_slot_delete_view, name='schedule_slot_delete'),
+    path('schedules/generate-lessons/', views.generate_lessons_view, name='generate_lessons'),
+    path('calendar/', views.schedule_calendar_view, name='schedule_calendar'),
 ]

@@ -2,12 +2,17 @@ from django import forms
 from django.utils import timezone
 from .models import SalaryPayment
 from apps.academics.models import Teacher
+from apps.accounts.widgets import DynamicSearchSelect
 
 
 class SalaryGenerateForm(forms.Form):
     teacher = forms.ModelChoiceField(
         queryset=Teacher.objects.filter(status=Teacher.Status.ACTIVE),
-        widget=forms.Select(attrs={'class': 'form-select'}),
+        widget=DynamicSearchSelect(
+            search_url='/api/search/teachers/',
+            model=Teacher,
+            placeholder="O'qituvchini qidirish (kamida 3 ta harf)..."
+        ),
         label="O'qituvchi"
     )
     period_month = forms.DateField(

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Dars jadvali slotini tahrirlash: {{ slot.group.name }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'academics:schedules_list' %}">Dars jadvallari</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'academics:group_detail' slot.group.id %}">{{ slot.group.name }}</a></li>
+    <li class="breadcrumb-item active">Jadval slotini tahrirlash</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-primary">
+                    <i class="bi bi-clock-history me-2"></i>Dars jadvali slotini tahrirlash
+                </h5>
+                <span class="badge bg-primary">{{ slot.group.name }}</span>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ redirect_url }}">
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger shadow-sm">
+                            {% for err in form.non_field_errors %}
+                                <div>{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="{{ form.weekday.id_for_label }}">
+                            {{ form.weekday.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.weekday }}
+                        {% if form.weekday.errors %}
+                            <div class="text-danger small mt-1">{{ form.weekday.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold" for="{{ form.start_time.id_for_label }}">
+                                {{ form.start_time.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.start_time }}
+                            {% if form.start_time.errors %}
+                                <div class="text-danger small mt-1">{{ form.start_time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold" for="{{ form.end_time.id_for_label }}">
+                                {{ form.end_time.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.end_time }}
+                            {% if form.end_time.errors %}
+                                <div class="text-danger small mt-1">{{ form.end_time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="{{ form.room.id_for_label }}">
+                            {{ form.room.label }}
+                        </label>
+                        {{ form.room }}
+                        {% if form.room.errors %}
+                            <div class="text-danger small mt-1">{{ form.room.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text small">Masalan: 101-auditoriya yoki Laboratoriya.</div>
+                    </div>
+
+                    <div class="form-check p-3 bg-light rounded-3 mb-4 border">
+                        {{ form.is_active }}
+                        <label class="form-check-label fw-semibold ms-2" for="{{ form.is_active.id_for_label }}">
+                            {{ form.is_active.label }}
+                        </label>
+                        <div class="text-muted small ms-4">
+                            Faol bo‘lmagan slotlar dars generatsiyasida ishtirok etmaydi.
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{{ redirect_url }}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Saqlash
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

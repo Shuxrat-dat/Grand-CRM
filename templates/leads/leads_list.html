@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Lidlar — Potensial o‘quvchilar{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Lidlar</li>
+{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="row g-3 mb-4 align-items-center">
+    <div class="col-md-7">
+        <h4 class="fw-bold mb-1">
+            <i class="bi bi-funnel-fill text-primary me-2"></i>Lidlar (Potensial o‘quvchilar)
+        </h4>
+        <div class="text-muted small">
+            O‘quv markaziga qiziqish bildirgan mijozlar hisobi, statuslar nazorati va o‘quvchiga aylantirish
+        </div>
+    </div>
+    <div class="col-md-5 text-md-end">
+        <a href="{% url 'leads:lead_create' %}" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i> Yangi lid qo‘shish
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="rounded-3 bg-primary-subtle text-primary p-3 me-3">
+                    <i class="bi bi-people-fill fs-3"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Jami lidlar</span>
+                    <h3 class="fw-bold mb-0 mt-1">{{ total_leads_count }}</h3>
+                    <div class="text-muted small mt-1">Barcha murojaatlar</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="rounded-3 bg-warning-subtle text-warning-emphasis p-3 me-3">
+                    <i class="bi bi-star-fill fs-3"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Yangi lidlar</span>
+                    <h3 class="fw-bold mb-0 mt-1">{{ new_leads_count }}</h3>
+                    <div class="text-muted small mt-1">Ko‘rib chiqilishi kerak</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="rounded-3 bg-info-subtle text-info-emphasis p-3 me-3">
+                    <i class="bi bi-telephone-outbound-fill fs-3"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Jarayonda</span>
+                    <h3 class="fw-bold mb-0 mt-1">{{ active_leads_count }}</h3>
+                    <div class="text-muted small mt-1">Aloqa va sinov darsi</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 h-100 border-start border-4 border-success">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="text-muted small text-uppercase fw-semibold">O‘quvchiga aylantirildi</span>
+                    <span class="badge bg-success-subtle text-success fw-bold">{{ conversion_rate }}% konversiya</span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2">
+                    <h3 class="fw-bold mb-0 text-success">{{ converted_leads_count }}</h3>
+                    <span class="text-muted small">/ {{ total_leads_count }} ta</span>
+                </div>
+                <div class="progress mt-2" style="height: 6px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ conversion_rate }}%;" aria-valuenow="{{ conversion_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search Toolbar -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small text-muted mb-1">Qidiruv (Ism, telefon, izoh)</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" value="{{ q }}" class="form-control border-start-0" placeholder="F.I.SH. yoki telefon...">
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-3 col-6">
+                <label class="form-label small text-muted mb-1">Holati (Status)</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Barcha statuslar</option>
+                    {% for val, label in status_choices %}
+                        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-3 col-6">
+                <label class="form-label small text-muted mb-1">Qiziqqan kurs</label>
+                <select name="course" class="form-select form-select-sm">
+                    <option value="">Barcha kurslar</option>
+                    {% for crs in courses %}
+                        <option value="{{ crs.id }}" {% if course_filter == crs.id|stringformat:"s" %}selected{% endif %}>{{ crs.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <label class="form-label small text-muted mb-1">Manba</label>
+                <select name="source" class="form-select form-select-sm">
+                    <option value="">Barcha manbalar</option>
+                    {% for val, label in source_choices %}
+                        <option value="{{ val }}" {% if source_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <label class="form-label small text-muted mb-1">Saralash</label>
+                <select name="sort" class="form-select form-select-sm">
+                    <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Eng yangi oldin</option>
+                    <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Eng eski oldin</option>
+                    <option value="full_name" {% if sort_by == 'full_name' %}selected{% endif %}>Ism bo‘yicha (A-Z)</option>
+                    <option value="-full_name" {% if sort_by == '-full_name' %}selected{% endif %}>Ism bo‘yicha (Z-A)</option>
+                    <option value="status" {% if sort_by == 'status' %}selected{% endif %}>Status bo‘yicha</option>
+                </select>
+            </div>
+            <div class="col-lg-1 col-md-4 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-primary w-100" title="Qidirish va filtrlash">
+                    <i class="bi bi-filter"></i>
+                </button>
+                {% if q or status_filter or course_filter or source_filter or sort_by != '-created_at' or date_from or date_to %}
+                    <a href="{% url 'leads:leads_list' %}" class="btn btn-sm btn-light border" title="Filtrni tozalash">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Leads List Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">Lidlar ro‘yxati ({{ page_obj.paginator.count }} ta natija)</h6>
+        <span class="text-muted small">O‘quvchiga aylantirilgan lidlar yashil fonda aks etadi</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 45px;">#</th>
+                        <th>F.I.SH. & Telefon</th>
+                        <th>Qiziqqan kurs</th>
+                        <th>Manba</th>
+                        <th>Murojaat sanasi</th>
+                        <th>Mas'ul xodim</th>
+                        <th>Holati (Status)</th>
+                        <th>Izoh</th>
+                        <th class="text-end" style="min-width: 220px;">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lead in leads %}
+                    <tr class="{% if lead.is_converted %}table-success border-success-subtle{% endif %}">
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ lead.full_name }}</div>
+                            <div class="text-muted small">
+                                <i class="bi bi-telephone me-1"></i>{{ lead.phone }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if lead.course %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                    {{ lead.course.name }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                {% if lead.source == 'personal' %}
+                                    <i class="bi bi-person me-1"></i>Shaxsan
+                                {% elif lead.source == 'phone' %}
+                                    <i class="bi bi-telephone me-1"></i>Telefon
+                                {% elif lead.source == 'telegram' %}
+                                    <i class="bi bi-telegram me-1 text-primary"></i>Telegram
+                                {% elif lead.source == 'instagram' %}
+                                    <i class="bi bi-instagram me-1 text-danger"></i>Instagram
+                                {% elif lead.source == 'advertising' %}
+                                    <i class="bi bi-badge-ad me-1 text-warning"></i>Reklama
+                                {% elif lead.source == 'recommendation' %}
+                                    <i class="bi bi-hand-thumbs-up me-1 text-success"></i>Tavsiya
+                                {% else %}
+                                    {{ lead.get_source_display }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="small fw-semibold">{{ lead.created_at|date:"Y-m-d" }}</div>
+                            <div class="text-muted small" style="font-size: 0.72rem;">{{ lead.created_at|time:"H:i" }}</div>
+                        </td>
+                        <td>
+                            {% if lead.assigned_to %}
+                                <span class="small fw-semibold">{{ lead.assigned_to.get_full_name|default:lead.assigned_to.username }}</span>
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if lead.status == 'yangi' %}
+                                <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-star-fill me-1"></i>Yangi</span>
+                            {% elif lead.status == 'boglanildi' %}
+                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1"><i class="bi bi-chat-dots me-1"></i>Bog‘lanildi</span>
+                            {% elif lead.status == 'sinov_darsi' %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-calendar-event me-1"></i>Sinov darsi</span>
+                            {% elif lead.status == 'kutilmoqda' %}
+                                <span class="badge bg-secondary-subtle text-dark border border-secondary-subtle px-2 py-1"><i class="bi bi-hourglass-split me-1"></i>Kutilmoqda</span>
+                            {% elif lead.status == 'kelmagan' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-x-circle me-1"></i>Kelmagan</span>
+                            {% elif lead.status == 'qayta_aloqa' %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1"><i class="bi bi-arrow-repeat me-1"></i>Qayta aloqa</span>
+                            {% elif lead.status == 'converted' %}
+                                <span class="badge bg-success px-2 py-1 shadow-sm"><i class="bi bi-check-circle-fill me-1"></i>O‘quvchiga aylantirildi</span>
+                            {% elif lead.status == 'rad_etdi' %}
+                                <span class="badge bg-secondary text-white px-2 py-1"><i class="bi bi-dash-circle me-1"></i>Rad etdi</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark">{{ lead.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="small text-truncate" style="max-width: 180px;" title="{{ lead.notes }}">
+                                {{ lead.notes|default:"—" }}
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            {% if lead.is_converted and lead.converted_student %}
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <a href="{% url 'students:student_detail' lead.converted_student.id %}" class="btn btn-sm btn-success text-white shadow-sm" title="Yaratilgan o‘quvchi profiliga o‘tish">
+                                        <i class="bi bi-person-check-fill me-1"></i>O‘quvchi profili
+                                    </a>
+                                    <a href="{% url 'leads:lead_edit' lead.id %}" class="btn btn-sm btn-outline-secondary" title="Tahrirlash">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <a href="{% url 'leads:lead_convert' lead.id %}" class="btn btn-sm btn-primary shadow-sm" title="O‘quvchiga aylantirish">
+                                        <i class="bi bi-person-plus-fill me-1"></i>O‘quvchiga aylantirish
+                                    </a>
+                                    <a href="{% url 'leads:lead_edit' lead.id %}" class="btn btn-sm btn-outline-secondary" title="Tahrirlash">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'leads:lead_delete' lead.id %}" class="btn btn-sm btn-outline-danger" title="O‘chirish">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                            Kiritilgan qidiruv yoki filtr parametrlari bo‘yicha lidlar topilmadi.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center">
+        <span class="text-muted small">
+            Sahifa {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} (Jami {{ page_obj.paginator.count }} ta)
+        </span>
+        <nav aria-label="Lidlar sahifalari">
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Oldingi</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Oldingi</span></li>
+                {% endif %}
+
+                {% for p in page_obj.paginator.page_range %}
+                    {% if p == page_obj.number %}
+                        <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                    {% elif p > page_obj.number|add:"-3" and p < page_obj.number|add:"3" %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ p }}{% if q %}&q={{ q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">{{ p }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if course_filter %}&course={{ course_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Keyingi</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Keyingi</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

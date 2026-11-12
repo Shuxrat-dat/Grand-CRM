@@ -5,6 +5,7 @@ from .models import Payment, MonthlyCharge
 from apps.accounts.models import CenterSettings
 from apps.students.models import Student
 from apps.academics.models import Enrollment, StudyGroup
+from apps.accounts.widgets import DynamicSearchSelect
 
 
 class PaymentForm(forms.ModelForm):
@@ -19,7 +20,11 @@ class PaymentForm(forms.ModelForm):
         model = Payment
         fields = ['student', 'amount', 'method', 'paid_at', 'reference', 'idempotency_key']
         widgets = {
-            'student': forms.Select(attrs={'class': 'form-select'}),
+            'student': DynamicSearchSelect(
+                search_url='/api/search/students/',
+                model=Student,
+                placeholder="O'quvchini qidirish (kamida 3 ta harf)..."
+            ),
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Masalan: 500000'}),
             'method': forms.Select(attrs={'class': 'form-select'}),
             'paid_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
@@ -58,7 +63,11 @@ class PaymentForm(forms.ModelForm):
 class MonthlyChargeForm(forms.Form):
     enrollment = forms.ModelChoiceField(
         queryset=Enrollment.objects.filter(status=Enrollment.Status.ACTIVE).select_related('student', 'group'),
-        widget=forms.Select(attrs={'class': 'form-select'}),
+        widget=DynamicSearchSelect(
+            search_url='/api/search/enrollments/',
+            model=Enrollment,
+            placeholder="O'quvchi yoki guruh nomi (kamida 3 ta harf)..."
+        ),
         label="O'quvchi va guruh (A'zolik)"
     )
     billing_month = forms.DateField(

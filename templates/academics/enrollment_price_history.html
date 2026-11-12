@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Narx o‘zgarishlari tarixi: {{ enrollment.student.full_name }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'academics:groups_list' %}">Guruhlar</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'academics:group_detail' enrollment.group.id %}">{{ enrollment.group.name }}</a></li>
+    <li class="breadcrumb-item active">Narx tarixi</li>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4 align-items-center">
+    <div class="col-md-7">
+        <h4 class="fw-bold mb-1">
+            <i class="bi bi-clock-history text-primary me-2"></i>Ta'lim narxi o‘zgarishlari tarixi
+        </h4>
+        <div class="text-muted small">
+            O‘quvchi: <strong>{{ enrollment.student.full_name }}</strong> | Guruh: <strong>{{ enrollment.group.name }}</strong> ({{ enrollment.group.course.name }})
+        </div>
+    </div>
+    <div class="col-md-5 text-md-end">
+        <a href="{% url 'academics:group_detail' enrollment.group.id %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Guruh sahifasiga qaytish
+        </a>
+    </div>
+</div>
+
+<!-- Price Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <span class="text-muted small text-uppercase fw-semibold">Kurs standart narxi</span>
+                <h4 class="fw-bold mb-0 mt-1 text-dark">{{ enrollment.standard_price|uzs }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <span class="text-muted small text-uppercase fw-semibold">Amaldagi individual narx</span>
+                <h4 class="fw-bold mb-0 mt-1 text-primary">{{ enrollment.monthly_price|uzs }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <span class="text-muted small text-uppercase fw-semibold">Chegirma / Farq</span>
+                <h4 class="fw-bold mb-0 mt-1 text-success">
+                    {% if enrollment.discount_amount %}
+                        -{{ enrollment.discount_amount|uzs }}
+                    {% else %}
+                        0 so'm
+                    {% endif %}
+                </h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">Narx o‘zgarishlari jurnali ({{ history|length }} ta yozuv)</h6>
+        <div class="d-flex gap-2">
+            <a href="{% url 'academics:enrollment_update_price' enrollment.id %}" class="btn btn-sm btn-primary">
+                <i class="bi bi-pencil-square me-1"></i> Yangi narx belgilash
+            </a>
+            {% if enrollment.is_custom_price %}
+            <form method="post" action="{% url 'academics:enrollment_revert_price' enrollment.id %}" onsubmit="return confirm('Standart narxga qaytarishni tasdiqlaysizmi?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-warning">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Standart narxga qaytarish
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Oldingi narx</th>
+                        <th>Yangi narx</th>
+                        <th>O‘zgarish</th>
+                        <th>Sababi</th>
+                        <th>O‘zgartirgan xodim</th>
+                        <th>O‘zgartirilgan sana</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in history %}
+                    <tr>
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td><del class="text-muted">{{ item.old_price|uzs }}</del></td>
+                        <td><strong class="text-primary">{{ item.new_price|uzs }}</strong></td>
+                        <td>
+                            {% if item.new_price < item.old_price %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-arrow-down me-1"></i>Chegirma
+                                </span>
+                            {% elif item.new_price > item.old_price %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                    <i class="bi bi-arrow-up me-1"></i>Oshirildi
+                                </span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">O‘zgarishsiz</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ item.reason }}</span>
+                        </td>
+                        <td>
+                            {% if item.changed_by %}
+                                <div class="fw-semibold">{{ item.changed_by.get_full_name|default:item.changed_by.username }}</div>
+                                <div class="text-muted small" style="font-size: 0.72rem;">@{{ item.changed_by.username }}</div>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">
+                            {{ item.changed_at|date:"Y-m-d H:i" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-clock-history fs-2 d-block mb-2 text-secondary"></i>
+                            Ushbu a'zolik bo‘yicha narx o‘zgarishlari tarixi mavjud emas. Dastlabki standart narx amalda.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

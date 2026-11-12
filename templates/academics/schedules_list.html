@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}Dars jadvallari (Dars jadvali slotlari){% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'academics:groups_list' %}">Darslar & Guruhlar</a></li>
+    <li class="breadcrumb-item active">Dars jadvallari</li>
+{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="row g-3 mb-4 align-items-center">
+    <div class="col-md-6">
+        <h4 class="fw-bold mb-1">
+            <i class="bi bi-calendar-week text-primary me-2"></i>Dars jadvallari va slotlar
+        </h4>
+        <div class="text-muted small">
+            Guruhlar haftalik dars jadvallarini rejalashtirish, xonalar bandligi va darslarni avtomatik shakllantirish
+        </div>
+    </div>
+    <div class="col-md-6 text-md-end d-flex flex-wrap justify-content-md-end gap-2">
+        <a href="{% url 'academics:schedule_calendar' %}" class="btn btn-outline-primary shadow-sm">
+            <i class="bi bi-calendar3 me-1"></i> Darslar taqvimi
+        </a>
+        <button type="button" class="btn btn-outline-success shadow-sm" data-bs-toggle="modal" data-bs-target="#generateLessonsModal">
+            <i class="bi bi-lightning-charge me-1"></i> Darslarni generatsiya qilish
+        </button>
+        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#createSlotModal">
+            <i class="bi bi-plus-circle me-1"></i> Yangi jadval sloti
+        </button>
+    </div>
+</div>
+
+<!-- Filters Toolbar -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Guruh</label>
+                <select name="group" class="form-select form-select-sm">
+                    <option value="">Barcha guruhlar</option>
+                    {% for g in groups %}
+                        <option value="{{ g.id }}" {% if selected_group == g.id|stringformat:"s" %}selected{% endif %}>{{ g.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Hafta kuni</label>
+                <select name="weekday" class="form-select form-select-sm">
+                    <option value="">Barcha kunlar</option>
+                    {% for val, label in weekday_choices %}
+                        <option value="{{ val }}" {% if selected_weekday == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted mb-1">Xona</label>
+                <input type="text" name="room" value="{{ selected_room|default:'' }}" class="form-control form-control-sm" placeholder="Xona nomi...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted mb-1">Holati</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Barchasi</option>
+                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Faqat faol</option>
+                    <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Faqat nofaol</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
+                    <i class="bi bi-funnel me-1"></i> Filtr
+                </button>
+                {% if selected_group or selected_weekday or selected_room or selected_status %}
+                    <a href="{% url 'academics:schedules_list' %}" class="btn btn-sm btn-light border" title="Filtrni tozalash">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Schedules List Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">Mavjud dars jadvali slotlari ({{ schedules|length }} ta)</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 45px;">#</th>
+                        <th>Guruh nomi</th>
+                        <th>Kurs</th>
+                        <th>O‘qituvchi</th>
+                        <th>Hafta kuni</th>
+                        <th>Dars vaqti</th>
+                        <th>Auditoriya / Xona</th>
+                        <th>Holati</th>
+                        <th class="text-end" style="min-width: 130px;">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sch in schedules %}
+                    <tr class="{% if not sch.is_active %}table-light opacity-75{% endif %}">
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td>
+                            <a href="{% url 'academics:group_detail' sch.group.id %}" class="fw-bold text-decoration-none text-dark">
+                                {{ sch.group.name }}
+                            </a>
+                        </td>
+                        <td>{{ sch.group.course.name }}</td>
+                        <td>{{ sch.group.teacher.full_name }}</td>
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                <i class="bi bi-calendar3 me-1"></i>{{ sch.get_weekday_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong class="text-dark">{{ sch.start_time|time:"H:i" }} - {{ sch.end_time|time:"H:i" }}</strong>
+                        </td>
+                        <td>
+                            {% if sch.room %}
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-geo-alt me-1 text-danger"></i>{{ sch.room }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if sch.is_active %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                    <i class="bi bi-check-circle me-1"></i>Faol
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                    <i class="bi bi-pause-circle me-1"></i>O‘chirilgan
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <form method="post" action="{% url 'academics:schedule_slot_toggle' sch.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{% url 'academics:schedules_list' %}">
+                                    <button type="submit" class="btn btn-sm {% if sch.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" title="{% if sch.is_active %}Vaqtincha o‘chirish{% else %}Faollashtirish{% endif %}">
+                                        <i class="bi {% if sch.is_active %}bi-pause-fill{% else %}bi-play-fill{% endif %}"></i>
+                                    </button>
+                                </form>
+                                <a href="{% url 'academics:schedule_slot_edit' sch.id %}?next={% url 'academics:schedules_list' %}" class="btn btn-sm btn-outline-secondary" title="Tahrirlash">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="post" action="{% url 'academics:schedule_slot_delete' sch.id %}" onsubmit="return confirm('Haqiqatdan ham ushbu jadval slotini o‘chirmoqchimisiz?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{% url 'academics:schedules_list' %}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="O‘chirish">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-calendar-x fs-1 d-block mb-2 text-secondary"></i>
+                            Dars jadvali slotlari topilmadi.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Create Schedule Slot (Task 6) -->
+<div class="modal fade" id="createSlotModal" tabindex="-1" aria-labelledby="createSlotModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="createSlotModalLabel">
+                    <i class="bi bi-calendar-plus me-1"></i> Yangi dars jadvali sloti
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Yopish"></button>
+            </div>
+            <form method="post" action="{% url 'academics:schedule_slot_create' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'academics:schedules_list' %}">
+                
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Guruh <span class="text-danger">*</span></label>
+                        {{ multi_form.group }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold mb-1">Hafta kunlari (Bir yoki bir nechta kunni tanlang) <span class="text-danger">*</span></label>
+                        <div class="d-flex flex-wrap gap-2 p-2 bg-light rounded border">
+                            {% for val, label in multi_form.fields.weekdays.choices %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="weekdays" id="modal_w_{{ val }}" value="{{ val }}">
+                                    <label class="form-check-label small" for="modal_w_{{ val }}">{{ label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Boshlanish vaqti <span class="text-danger">*</span></label>
+                            {{ multi_form.start_time }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Tugash vaqti <span class="text-danger">*</span></label>
+                            {{ multi_form.end_time }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Auditoriya / Xona</label>
+                        {{ multi_form.room }}
+                    </div>
+
+                    <div class="form-check p-2 bg-light rounded border mb-2">
+                        <input class="form-check-input ms-1 me-2" type="checkbox" name="is_active" id="modal_is_active" checked>
+                        <label class="form-check-label small fw-semibold" for="modal_is_active">
+                            Faol holatda saqlash
+                        </label>
+                    </div>
+
+                    <div class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>O‘qituvchi, guruh va xona bo‘yicha vaqt to‘qnashuvlari avtomatik tekshiriladi.
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4">
+                        <i class="bi bi-check2-circle me-1"></i> Slotlarni yaratish
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Generate Lessons (Task 6) -->
+<div class="modal fade" id="generateLessonsModal" tabindex="-1" aria-labelledby="generateLessonsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="generateLessonsModalLabel">
+                    <i class="bi bi-lightning-charge me-1"></i> Darslarni generatsiya qilish
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Yopish"></button>
+            </div>
+            <form method="post" action="{% url 'academics:generate_lessons' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'academics:schedules_list' %}">
+                
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        Guruhlarning faol jadval slotlari asosida tanlangan davr uchun darslar avtomatik shakllantiriladi. Mavjud darslar takrorlanmaydi.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Guruh (Ixtiyoriy)</label>
+                        {{ generate_form.group }}
+                        <div class="form-text small">Tanlanmasa, barcha faol guruhlar uchun generatsiya qilinadi.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Boshlanish sanasi</label>
+                        {{ generate_form.start_date }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Tugash sanasi</label>
+                        {{ generate_form.end_date }}
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4">
+                        <i class="bi bi-lightning-charge me-1"></i> Generatsiya qilish
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'leads:leads_list' %}">Lidlar</a></li>
+    <li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-funnel text-primary me-2"></i>{{ title }}
+                </h5>
+                <a href="{% url 'leads:leads_list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Ro‘yxatga qaytish
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger shadow-sm">
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="row g-3">
+                        <!-- Full Name -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="{{ form.full_name.id_for_label }}">
+                                {{ form.full_name.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.full_name }}
+                            {% if form.full_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.full_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="{{ form.phone.id_for_label }}">
+                                {{ form.phone.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Course -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="{{ form.course.id_for_label }}">
+                                {{ form.course.label }}
+                            </label>
+                            {{ form.course }}
+                            {% if form.course.errors %}
+                                <div class="text-danger small mt-1">{{ form.course.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Source -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="{{ form.source.id_for_label }}">
+                                {{ form.source.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.source }}
+                            {% if form.source.errors %}
+                                <div class="text-danger small mt-1">{{ form.source.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Status -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="{{ form.status.id_for_label }}">
+                                {{ form.status.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger small mt-1">{{ form.status.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Assigned Staff -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="{{ form.assigned_to.id_for_label }}">
+                                {{ form.assigned_to.label }}
+                            </label>
+                            {{ form.assigned_to }}
+                            {% if form.assigned_to.errors %}
+                                <div class="text-danger small mt-1">{{ form.assigned_to.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" for="{{ form.notes.id_for_label }}">
+                                {{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Murojaat sababi, qiziqishlari yoki muzokara natijalarini yozing.</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'leads:leads_list' %}" class="btn btn-light">Bekor qilish</a>
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Saqlash
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
