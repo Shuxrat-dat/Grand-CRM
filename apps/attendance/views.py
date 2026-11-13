@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count, Q
+from django.urls import reverse
 from django.utils import timezone
 from apps.accounts.decorators import admin_or_owner_required
 from apps.audit.services import log_audit
@@ -32,6 +33,60 @@ def lessons_list_view(request):
         'groups': groups,
         'selected_group': group_id,
         'selected_date': date_filter,
+    })
+
+
+@admin_or_owner_required
+def attendance_daily_view(request):
+    """
+    Admin's daily attendance screen. Lessons for the chosen day are created
+    automatically from group schedules, then each lesson is one click away.
+    """
+    import calendar as _cal
+    from datetime import date as _date, timedelta
+    from apps.academics.services import generate_lessons_from_schedules
+
+    raw = request.GET.get('date', '')
+    try:
+        day = _date.fromisoformat(raw) if raw else timezone.localdate()
+    except ValueError:
+        day = timezone.localdate()
+
+    if request.method == 'POST' and request.POST.get('action') == 'generate_month':
+        first = day.replace(day=1)
+        last = day.replace(day=_cal.monthrange(day.year, day.month)[1])
+        generate_lessons_from_schedules(start_date=first, end_date=last, user=request.user)
+        messages.success(request, f"{first.strftime('%m.%Y')} oyi uchun barcha darslar yaratildi.")
+        return redirect(f"{request.path}?date={day.isoformat()}")
+
+    # Lessons of the day are created automatically from the schedules
+    generate_lessons_from_schedules(start_date=day, end_date=day, user=request.user)
+
+    lessons = list(
+        Lesson.objects.filter(date=day)
+        .select_related('group', 'group__course', 'group__teacher')
+        .annotate(
+            present_count=Count('attendances', filter=Q(attendances__status__in=['present', 'late'])),
+            absent_count=Count('attendances', filter=Q(attendances__status__in=['absent', 'excused'])),
+        )
+        .order_by('starts_at', 'group__name')
+    )
+    active = Enrollment.objects.filter(status=Enrollment.Status.ACTIVE).values('group_id').annotate(n=Count('id'))
+    students_by_group = {r['group_id']: r['n'] for r in active}
+    marked = 0
+    for lesson in lessons:
+        lesson.students_total = students_by_group.get(lesson.group_id, 0)
+        lesson.is_marked = (lesson.present_count + lesson.absent_count) > 0
+        marked += 1 if lesson.is_marked else 0
+
+    return render(request, 'attendance/attendance_daily.html', {
+        'day': day,
+        'prev_day': day - timedelta(days=1),
+        'next_day': day + timedelta(days=1),
+        'is_today': day == timezone.localdate(),
+        'lessons': lessons,
+        'marked_count': marked,
+        'total_count': len(lessons),
     })
 
 
@@ -196,7 +251,7 @@ def lesson_attendance_view(request, lesson_id):
             lesson.save(update_fields=['status'])
 
         messages.success(request, f"{lesson.group.name} uchun davomat muvaffaqiyatli saqlandi.")
-        return redirect('attendance:lesson_attendance', lesson_id=lesson.id)
+        return redirect(f"{reverse('attendance:daily')}?date={lesson.date.isoformat()}")
 
     # Build student attendance rows for template
     attendance_rows = []

@@ -261,7 +261,7 @@
                 <a href="{% url 'academics:schedules_list' %}" class="nav-link {% if 'schedules' in request.path %}active{% endif %}">
                     <i class="bi bi-calendar-week me-2"></i> Dars jadvallari
                 </a>
-                <a href="{% url 'attendance:lessons_list' %}" class="nav-link {% if 'attendance' in request.path and 'calendar' not in request.path %}active{% endif %}">
+                <a href="{% url 'attendance:daily' %}" class="nav-link {% if 'attendance' in request.path and 'calendar' not in request.path %}active{% endif %}">
                     <i class="bi bi-calendar-check me-2"></i> Davomat jurnali
                 </a>
                 <a href="{% url 'academics:courses_list' %}" class="nav-link {% if 'courses' in request.path %}active{% endif %}">
@@ -393,7 +393,7 @@
                         <li><a class="dropdown-item py-2" href="{% url 'academics:group_create' %}"><i class="bi bi-collection text-info me-2"></i>Guruh ochish</a></li>
                         <li><a class="dropdown-item py-2" href="{% url 'academics:schedules_list' %}"><i class="bi bi-calendar-plus text-primary me-2"></i>Dars jadvali tuzish</a></li>
                         <li><a class="dropdown-item py-2" href="{% url 'academics:schedule_calendar' %}"><i class="bi bi-calendar3 text-secondary me-2"></i>Darslar taqvimi</a></li>
-                        <li><a class="dropdown-item py-2" href="{% url 'attendance:lessons_list' %}"><i class="bi bi-calendar-check text-warning me-2"></i>Davomat belgilash</a></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'attendance:daily' %}"><i class="bi bi-calendar-check text-warning me-2"></i>Davomat belgilash</a></li>
                         {% if is_owner %}
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item py-2" href="{% url 'finance:expense_create' %}"><i class="bi bi-cart-dash text-danger me-2"></i>Xarajat kiritish</a></li>

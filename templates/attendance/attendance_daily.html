@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load crm_tags %}
+
+{% block title %}Davomat{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Davomat</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="bi bi-calendar-check text-primary me-2"></i>Davomat belgilash</h4>
+        <p class="text-muted small mb-0">Kunni tanlang, guruhni bosing va o‘quvchilarni belgilang. Darslar jadval bo‘yicha o‘zi yaratiladi.</p>
+    </div>
+    <form method="post" onsubmit="return confirm('Shu oy uchun barcha guruhlarning darslari yaratilsinmi?');">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="generate_month">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-calendar-plus me-1"></i> Oy uchun darslarni yaratish
+        </button>
+    </form>
+</div>
+
+<!-- Day navigation -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3 d-flex flex-wrap align-items-center gap-2">
+        <a href="?date={{ prev_day|date:'Y-m-d' }}" class="btn btn-outline-secondary" title="Oldingi kun"><i class="bi bi-chevron-left"></i></a>
+        <form method="get" class="d-flex align-items-center gap-2 mb-0">
+            <input type="date" name="date" value="{{ day|date:'Y-m-d' }}" class="form-control" onchange="this.form.submit()" style="max-width: 190px;">
+        </form>
+        <a href="?date={{ next_day|date:'Y-m-d' }}" class="btn btn-outline-secondary" title="Keyingi kun"><i class="bi bi-chevron-right"></i></a>
+        {% if not is_today %}
+            <a href="{% url 'attendance:daily' %}" class="btn btn-primary">Bugun</a>
+        {% endif %}
+        <div class="ms-auto text-end">
+            <div class="fw-bold">{{ day|date:"d.m.Y" }}{% if is_today %} <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Bugun</span>{% endif %}</div>
+            <div class="small text-muted">Darslar: {{ total_count }} ta &middot; Davomat qilingan: {{ marked_count }} ta</div>
+        </div>
+    </div>
+</div>
+
+{% if lessons %}
+<div class="row g-3">
+    {% for lesson in lessons %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card shadow-sm border-0 h-100 {% if lesson.is_marked %}border-start border-success border-4{% else %}border-start border-warning border-4{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="fw-bold fs-5">{{ lesson.starts_at|time:"H:i" }} <span class="text-muted fs-6">– {{ lesson.ends_at|time:"H:i" }}</span></div>
+                    {% if lesson.status == 'cancelled' %}
+                        <span class="badge bg-secondary">Bekor qilingan</span>
+                    {% elif lesson.is_marked %}
+                        <span class="badge bg-success"><i class="bi bi-check2 me-1"></i>Belgilangan</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">Belgilanmagan</span>
+                    {% endif %}
+                </div>
+                <div class="fw-semibold">{{ lesson.group.name }}</div>
+                <div class="small text-muted mb-3">
+                    <i class="bi bi-person-badge me-1"></i>{{ lesson.group.teacher.full_name }}
+                    &middot; <i class="bi bi-people me-1"></i>{{ lesson.students_total }} nafar
+                </div>
+                {% if lesson.is_marked %}
+                <div class="mb-3">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ lesson.present_count }} keldi</span>
+                    {% if lesson.absent_count %}<span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ lesson.absent_count }} kelmadi</span>{% endif %}
+                </div>
+                {% endif %}
+                <a href="{% url 'attendance:lesson_attendance' lesson.id %}" class="btn {% if lesson.is_marked %}btn-outline-success{% else %}btn-success{% endif %} w-100">
+                    <i class="bi bi-check2-square me-1"></i> {% if lesson.is_marked %}Ko‘rish / o‘zgartirish{% else %}Davomat qilish{% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card shadow-sm border-0">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+        Bu kunda darslar yo‘q (guruhlarning jadvalida bu hafta kuni yo‘q).
+    </div>
+</div>
+{% endif %}
+{% endblock %}
