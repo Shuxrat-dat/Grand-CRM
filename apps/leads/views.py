@@ -82,10 +82,23 @@ def leads_list_view(request):
     else:
         qs = qs.order_by('-created_at')
 
+    due_filter = request.GET.get('due', '').strip()
+    closed_statuses = [Lead.Status.CONVERTED, Lead.Status.RAD_ETDI]
+    if due_filter == '1':
+        qs = qs.filter(next_contact_at__lte=timezone.now()).exclude(status__in=closed_statuses).order_by('next_contact_at')
+
     # Pagination
     paginator = Paginator(qs, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
+    now = timezone.now()
+    today = timezone.localdate()
+    for lead in page_obj.object_list:
+        open_lead = lead.status not in closed_statuses
+        lead.call_due = bool(open_lead and lead.next_contact_at and lead.next_contact_at <= now)
+        lead.call_today = bool(open_lead and lead.next_contact_at and not lead.call_due
+                               and timezone.localtime(lead.next_contact_at).date() == today)
 
     # Active groups for conversion modals
     active_groups = StudyGroup.objects.filter(is_active=True).select_related('course', 'teacher').order_by('name')
@@ -103,6 +116,7 @@ def leads_list_view(request):
         'date_from': date_from,
         'date_to': date_to,
         'sort_by': sort_by,
+        'due_filter': due_filter,
         # Stats
         'total_leads_count': total_leads_count,
         'converted_leads_count': converted_leads_count,

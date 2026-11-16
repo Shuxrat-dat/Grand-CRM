@@ -168,13 +168,14 @@
                         <th>Murojaat sanasi</th>
                         <th>Mas'ul xodim</th>
                         <th>Holati (Status)</th>
+                        <th>Qo'ng'iroq vaqti</th>
                         <th>Izoh</th>
                         <th class="text-end" style="min-width: 220px;">Amallar</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for lead in leads %}
-                    <tr class="{% if lead.is_converted %}table-success border-success-subtle{% endif %}">
+                    <tr class="{% if lead.is_converted %}table-success border-success-subtle{% elif lead.call_due %}table-danger{% elif lead.call_today %}table-warning{% endif %}">
                         <td class="text-muted">{{ forloop.counter }}</td>
                         <td>
                             <div class="fw-bold text-dark">{{ lead.full_name }}</div>
@@ -243,6 +244,18 @@
                             {% endif %}
                         </td>
                         <td>
+                            {% if lead.next_contact_at and not lead.is_converted %}
+                                {% if lead.call_due %}
+                                    <span class="badge bg-danger"><i class="bi bi-telephone-forward-fill me-1"></i>Qo'ng'iroq vaqti keldi!</span>
+                                {% elif lead.call_today %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-alarm me-1"></i>Bugun</span>
+                                {% endif %}
+                                <div class="small {% if lead.call_due %}text-danger fw-bold{% else %}text-muted{% endif %}">{{ lead.next_contact_at|date:"d.m.Y H:i" }}</div>
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
                             <div class="small text-truncate" style="max-width: 180px;" title="{{ lead.notes }}">
                                 {{ lead.notes|default:"—" }}
                             </div>
@@ -274,7 +287,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted">
+                        <td colspan="10" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
                             Kiritilgan qidiruv yoki filtr parametrlari bo‘yicha lidlar topilmadi.
                         </td>

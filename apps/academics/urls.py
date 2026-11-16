@@ -21,6 +21,7 @@ urlpatterns = [
     path('groups/create/', views.group_create_view, name='group_create'),
     path('groups/<int:group_id>/', views.group_detail_view, name='group_detail'),
     path('groups/<int:group_id>/edit/', views.group_edit_view, name='group_edit'),
+    path('groups/<int:group_id>/salary-percent/', views.group_update_salary_percent_view, name='group_salary_percent'),
     path('groups/<int:group_id>/schedules/add/', views.group_schedule_add_view, name='group_schedule_add'),
 
     # Enrollments

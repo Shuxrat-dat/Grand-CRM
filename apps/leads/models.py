@@ -51,6 +51,12 @@ class Lead(models.Model):
         blank=True,
         verbose_name="Izoh / Kommentariy"
     )
+    next_contact_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Keyingi aloqa vaqti",
+        help_text="Shu vaqt kelganda lid qatorida ogohlantirish va bosh sahifada eslatma chiqadi."
+    )
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -92,6 +98,7 @@ class Lead(models.Model):
         verbose_name_plural = "Lidlar"
         ordering = ['-created_at']
         indexes = [
+            models.Index(fields=['next_contact_at']),
             models.Index(fields=['status']),
             models.Index(fields=['phone']),
             models.Index(fields=['created_at']),

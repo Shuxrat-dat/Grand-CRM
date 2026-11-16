@@ -8,7 +8,7 @@ from apps.accounts.models import User
 class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
-        fields = ['full_name', 'phone', 'course', 'source', 'assigned_to', 'status', 'notes']
+        fields = ['full_name', 'phone', 'course', 'source', 'assigned_to', 'status', 'next_contact_at', 'notes']
         widgets = {
             'full_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ism va familiya'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+998 90 123 45 67'}),
@@ -16,6 +16,7 @@ class LeadForm(forms.ModelForm):
             'source': forms.Select(attrs={'class': 'form-select'}),
             'assigned_to': forms.Select(attrs={'class': 'form-select'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
+            'next_contact_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Murojaat bo‘yicha qo‘shimcha ma’lumotlar...'}),
         }
         labels = {
@@ -25,6 +26,7 @@ class LeadForm(forms.ModelForm):
             'source': "Murojaat manbasi",
             'assigned_to': "Mas'ul xodim",
             'status': "Lid holati (Status)",
+            'next_contact_at': "Qachon qo'ng'iroq qilish kerak",
             'notes': "Kommentariy / Izoh",
         }
 
@@ -34,6 +36,8 @@ class LeadForm(forms.ModelForm):
         self.fields['assigned_to'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'username')
         self.fields['course'].empty_label = "-- Kursni tanlang (Ixtiyoriy) --"
         self.fields['assigned_to'].empty_label = "-- Mas'ul xodimni tanlang (Ixtiyoriy) --"
+        self.fields['next_contact_at'].input_formats = ['%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M']
+        self.fields['next_contact_at'].required = False
 
 
 class LeadConvertForm(forms.Form):

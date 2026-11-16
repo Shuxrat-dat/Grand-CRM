@@ -47,7 +47,7 @@
             <div class="col-sm-4">
                 <div class="p-3 bg-light rounded-3 border">
                     <div class="text-muted small">O'quvchilar soni / Sig'im:</div>
-                    <div class="fs-5 fw-bold text-dark">{{ enrollments.count }} / {{ group.capacity }} nafar</div>
+                    <div class="fs-5 fw-bold text-dark">{{ enrollments|length }} / {{ group.capacity }} nafar</div>
                 </div>
             </div>
             <div class="col-sm-4">
@@ -63,6 +63,46 @@
                 </div>
             </div>
         </div>
+
+        <!-- Monthly plan for this group -->
+        {% if is_owner %}
+        <div class="row g-3 mt-1">
+            <div class="col-lg-8">
+                <div class="p-3 rounded-3 border h-100">
+                    <div class="d-flex flex-wrap justify-content-between gap-2 small">
+                        <span class="text-muted">Joriy oy rejasi: <strong class="text-dark">{{ expected_this_month|uzs }}</strong></span>
+                        <span class="text-muted">Yig'ildi: <strong class="text-success">{{ collected_this_month|uzs }}</strong></span>
+                        <span class="text-muted">Qoldi: <strong class="text-danger">{{ remaining_this_month|uzs }}</strong></span>
+                    </div>
+                    <div class="progress mt-2" style="height: 10px;">
+                        <div class="progress-bar {% if percent_done >= 100 %}bg-success{% elif percent_done >= 50 %}bg-primary{% else %}bg-warning{% endif %}" style="width: {{ percent_done|stringformat:'s' }}%"></div>
+                    </div>
+                    <div class="small text-muted mt-1">Bajarildi: <strong>{{ percent_done }}%</strong></div>
+                </div>
+            </div>
+            {% if is_owner %}
+            <div class="col-lg-4">
+                <div class="p-3 rounded-3 border h-100">
+                    <form method="post" action="{% url 'academics:group_salary_percent' group.id %}" class="d-flex align-items-end gap-2">
+                        {% csrf_token %}
+                        <div class="flex-grow-1">
+                            <label class="form-label small text-muted mb-1">O'qituvchi ish haqi foizi (%)</label>
+                            <input type="number" name="salary_percent" min="0" max="100" step="0.01" class="form-control form-control-sm" value="{% if group.salary_percent is not None %}{{ group.salary_percent|floatformat:'-2' }}{% endif %}" placeholder="Masalan: 40">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">Saqlash</button>
+                    </form>
+                    <div class="small text-muted mt-2">
+                        {% if commission_this_month is not None %}
+                            Shu oy o'qituvchi ulushi: <strong class="text-primary">{{ commission_this_month|uzs }}</strong>
+                        {% else %}
+                            Foiz belgilanmagan
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -214,7 +254,7 @@
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                 <div>
-                    <h6 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Guruhdagi o‘quvchilar ({{ enrollments.count }})</h6>
+                    <h6 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Guruhdagi o‘quvchilar ({{ enrollments|length }})</h6>
                     <div class="text-muted small">Standart kurs narxi: <strong>{{ group.course.default_monthly_price|uzs }}</strong></div>
                 </div>
                 <a href="{% url 'academics:group_enroll_student' group.id %}" class="btn btn-sm btn-primary">

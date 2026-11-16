@@ -200,29 +200,16 @@ def get_accrual_profit_report(start_date: date, end_date: date):
 
 def get_debtors_report():
     """
-    List of students with outstanding debt balance.
+    List of students with outstanding debt for the current month.
+
+    Debt here means: for an active enrollment, this month's completed
+    payments to that (student, group) pair are less than the enrollment's
+    monthly_price. This matches how payments are actually recorded in this
+    app (directly against a group), rather than through the separate
+    MonthlyCharge workflow.
     """
-    students = Student.objects.filter(
-        status__in=[Student.Status.ACTIVE, Student.Status.SUSPENDED]
-    ).prefetch_related('enrollments__group', 'monthly_charges')
-
-    debtors = []
-    for s in students:
-        debt = s.total_debt
-        if debt > Decimal('0.00'):
-            overdue_count = s.monthly_charges.filter(status=MonthlyCharge.Status.OVERDUE).count()
-            active_groups = ", ".join([e.group.name for e in s.active_enrollments])
-            debtors.append({
-                'student': s,
-                'active_groups': active_groups or "Guruhsiz",
-                'total_charged': s.total_charged,
-                'total_paid': s.total_allocated_payments,
-                'total_debt': debt,
-                'overdue_count': overdue_count,
-            })
-
-    debtors.sort(key=lambda x: x['total_debt'], reverse=True)
-    return debtors
+    from apps.billing.services import get_current_month_debtors
+    return get_current_month_debtors()
 
 
 def export_report_to_excel(title: str, headers: list, rows: list, total_row: list = None) -> io.BytesIO:

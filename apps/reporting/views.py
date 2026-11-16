@@ -204,36 +204,87 @@ def report_debtors_view(request):
 
 @owner_required
 def report_group_revenue_view(request):
+    """
+    Per-teacher, per-group fulfillment report: for each group, the expected
+    monthly amount is the sum of its active enrollments' monthly_price
+    (e.g. 10 students x 400,000 = 4,000,000 expected from that group), and
+    "collected" is the sum of completed payments made to that group within
+    the selected date range (defaults to the current month). Each group
+    also shows its owner-set salary_percent and the resulting teacher
+    commission on the collected amount, if a percent is set.
+    """
     start_date, end_date = _parse_date_range(request)
 
-    groups = StudyGroup.objects.select_related('course', 'teacher').prefetch_related('enrollments').order_by('name')
-    report_rows = []
-    total_charges_sum = Decimal('0.00')
-    total_collected_sum = Decimal('0.00')
+    groups = StudyGroup.objects.filter(is_active=True).select_related('course', 'teacher').prefetch_related(
+        'enrollments'
+    ).order_by('teacher__full_name', 'name')
+
+    collected_rows = Payment.objects.filter(
+        status=Payment.Status.COMPLETED,
+        group__isnull=False,
+        paid_at__date__gte=start_date,
+        paid_at__date__lte=end_date,
+    ).values('group_id').annotate(total=Sum('amount'))
+    collected_map = {r['group_id']: r['total'] for r in collected_rows}
+
+    teachers_by_id = {}
+    total_expected = Decimal('0.00')
+    total_collected = Decimal('0.00')
+    total_commission = Decimal('0.00')
 
     for g in groups:
-        charges = MonthlyCharge.objects.exclude(status=MonthlyCharge.Status.CANCELLED).filter(
-            enrollment__group=g,
-            billing_month__gte=start_date,
-            billing_month__lte=end_date
-        )
-        charged = charges.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-        collected = sum([c.allocated_amount for c in charges], Decimal('0.00'))
+        active_enrollments = [e for e in g.enrollments.all() if e.status == 'active']
+        expected = sum((e.monthly_price or Decimal('0.00') for e in active_enrollments), Decimal('0.00'))
+        collected = collected_map.get(g.id, Decimal('0.00'))
+        debt = max(Decimal('0.00'), expected - collected)
+        percent_done = float(min(Decimal('100'), (collected / expected * 100))) if expected > 0 else 0.0
 
-        report_rows.append({
+        commission = None
+        if g.salary_percent is not None:
+            commission = (collected * g.salary_percent / Decimal('100')).quantize(Decimal('1'))
+            total_commission += commission
+
+        row = {
             'group': g,
-            'active_students': g.active_students_count,
-            'charged': charged,
+            'active_students': len(active_enrollments),
+            'expected': expected,
             'collected': collected,
-            'debt': max(Decimal('0.00'), charged - collected)
+            'debt': debt,
+            'percent_done': round(percent_done, 1),
+            'salary_percent': g.salary_percent,
+            'commission': commission,
+        }
+
+        bucket = teachers_by_id.setdefault(g.teacher_id, {
+            'teacher': g.teacher,
+            'rows': [],
+            'expected': Decimal('0.00'),
+            'collected': Decimal('0.00'),
+            'commission': Decimal('0.00'),
         })
-        total_charges_sum += charged
-        total_collected_sum += collected
+        bucket['rows'].append(row)
+        bucket['expected'] += expected
+        bucket['collected'] += collected
+        if commission:
+            bucket['commission'] += commission
+
+        total_expected += expected
+        total_collected += collected
+
+    teacher_rows = sorted(teachers_by_id.values(), key=lambda t: t['teacher'].full_name)
+    for t in teacher_rows:
+        t['debt'] = max(Decimal('0.00'), t['expected'] - t['collected'])
+        t['percent_done'] = round(
+            float(min(Decimal('100'), (t['collected'] / t['expected'] * 100))) if t['expected'] > 0 else 0.0,
+            1
+        )
 
     return render(request, 'reporting/group_revenue.html', {
-        'report_rows': report_rows,
-        'total_charges_sum': total_charges_sum,
-        'total_collected_sum': total_collected_sum,
+        'teacher_rows': teacher_rows,
+        'total_expected': total_expected,
+        'total_collected': total_collected,
+        'total_commission': total_commission,
+        'total_debt': max(Decimal('0.00'), total_expected - total_collected),
         'start_date': start_date,
         'end_date': end_date,
     })

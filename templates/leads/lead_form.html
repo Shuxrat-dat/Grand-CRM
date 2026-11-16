@@ -98,6 +98,18 @@
                             {% endif %}
                         </div>
 
+                        <!-- Next call time -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="{{ form.next_contact_at.id_for_label }}">
+                                <i class="bi bi-alarm text-warning me-1"></i>{{ form.next_contact_at.label }}
+                            </label>
+                            {{ form.next_contact_at }}
+                            {% if form.next_contact_at.errors %}
+                                <div class="text-danger small mt-1">{{ form.next_contact_at.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Shu vaqt kelganda lid qatori qizil bo'ladi va pastki o'ng burchakda eslatma chiqadi.</div>
+                        </div>
+
                         <!-- Notes -->
                         <div class="col-12">
                             <label class="form-label fw-semibold" for="{{ form.notes.id_for_label }}">

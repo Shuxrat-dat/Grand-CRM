@@ -130,6 +130,14 @@ class StudyGroup(models.Model):
     start_date = models.DateField(verbose_name="Boshlanish sanasi")
     end_date = models.DateField(null=True, blank=True, verbose_name="Tugash sanasi")
     is_active = models.BooleanField(default=True, verbose_name="Faol guruh")
+    salary_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="O'qituvchi uchun ish haqi foizi (%)",
+        help_text="Faqat Ega (Owner) belgilaydi. Guruhdan yig'ilgan to'lovning necha foizi o'qituvchiga tegishli."
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan")
 

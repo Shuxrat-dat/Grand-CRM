@@ -371,3 +371,65 @@ def get_group_month_payments(group, target_date: date = None) -> dict:
         paid_at__month=target_date.month,
     ).values('student_id').annotate(total=Sum('amount'))
     return {r['student_id']: r['total'] for r in rows}
+
+
+def get_current_month_debtors(target_date: date = None) -> list:
+    """
+    Students who, for the given month (default: current month), have paid
+    less than their active enrollments' monthly price for one or more groups.
+
+    This mirrors the same "this month's payments to the group vs the
+    enrollment's monthly_price" logic used on the group detail page, since
+    payments here are recorded directly against a (student, group) pair
+    rather than through the separate MonthlyCharge workflow.
+    """
+    from django.db.models import Sum
+    from apps.academics.models import Enrollment
+
+    target_date = target_date or timezone.localdate()
+
+    paid_rows = Payment.objects.filter(
+        status=Payment.Status.COMPLETED,
+        group__isnull=False,
+        paid_at__year=target_date.year,
+        paid_at__month=target_date.month,
+    ).values('student_id', 'group_id').annotate(total=Sum('amount'))
+    paid_map = {(r['student_id'], r['group_id']): r['total'] for r in paid_rows}
+
+    active_enrollments = Enrollment.objects.filter(
+        status=Enrollment.Status.ACTIVE
+    ).select_related('student', 'group')
+
+    by_student = {}
+    for e in active_enrollments:
+        price = e.monthly_price or Decimal('0.00')
+        paid = paid_map.get((e.student_id, e.group_id), Decimal('0.00'))
+        debt = max(Decimal('0.00'), price - paid)
+
+        entry = by_student.setdefault(e.student_id, {
+            'student': e.student,
+            'total_charged': Decimal('0.00'),
+            'total_paid': Decimal('0.00'),
+            'total_debt': Decimal('0.00'),
+            'debt_groups': [],
+        })
+        entry['total_charged'] += price
+        entry['total_paid'] += min(paid, price)
+        entry['total_debt'] += debt
+        if debt > Decimal('0.00'):
+            entry['debt_groups'].append(e.group.name)
+
+    debtors = []
+    for data in by_student.values():
+        if data['total_debt'] > Decimal('0.00'):
+            debtors.append({
+                'student': data['student'],
+                'active_groups': ", ".join(data['debt_groups']) or "Guruhsiz",
+                'total_charged': data['total_charged'],
+                'total_paid': data['total_paid'],
+                'total_debt': data['total_debt'],
+                'overdue_count': len(data['debt_groups']),
+            })
+
+    debtors.sort(key=lambda x: x['total_debt'], reverse=True)
+    return debtors

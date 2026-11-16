@@ -264,8 +264,21 @@ def group_detail_view(request, group_id):
             enr.pay_state = 'unpaid'
     recent_lessons = group.lessons.all().order_by('-date')[:10]
 
+    # Monthly plan vs collected for this group (current month)
+    expected_this_month = sum((e.monthly_price or Decimal('0.00') for e in enrollments), Decimal('0.00'))
+    collected_this_month = sum((Decimal(v) for v in paid_map.values()), Decimal('0.00'))
+    percent_done = float(min(Decimal('100'), collected_this_month / expected_this_month * 100)) if expected_this_month > 0 else 0.0
+    commission_this_month = None
+    if group.salary_percent is not None:
+        commission_this_month = (collected_this_month * group.salary_percent / Decimal('100')).quantize(Decimal('1'))
+
     return render(request, 'academics/group_detail.html', {
         'group': group,
+        'expected_this_month': expected_this_month,
+        'collected_this_month': collected_this_month,
+        'remaining_this_month': max(Decimal('0.00'), expected_this_month - collected_this_month),
+        'percent_done': round(percent_done, 1),
+        'commission_this_month': commission_this_month,
         'schedules': schedules,
         'enrollments': enrollments,
         'recent_lessons': recent_lessons,
@@ -274,6 +287,39 @@ def group_detail_view(request, group_id):
         'lesson_generate_form': LessonGenerateForm(initial={'group': group}),
         'enrollment_form': EnrollmentForm(initial={'group': group, 'monthly_price': group.course.default_monthly_price}),
     })
+
+
+@owner_required
+def group_update_salary_percent_view(request, group_id):
+    """Owner-only: set the teacher's salary percentage for this group."""
+    group = get_object_or_404(StudyGroup, id=group_id)
+    if request.method == 'POST':
+        raw = (request.POST.get('salary_percent') or '').strip().replace(',', '.')
+        old = group.salary_percent
+        if raw == '':
+            group.salary_percent = None
+        else:
+            try:
+                value = Decimal(raw)
+            except Exception:
+                messages.error(request, "Foiz noto'g'ri kiritildi.")
+                return redirect('academics:group_detail', group_id=group.id)
+            if value < 0 or value > 100:
+                messages.error(request, "Foiz 0 dan 100 gacha bo'lishi kerak.")
+                return redirect('academics:group_detail', group_id=group.id)
+            group.salary_percent = value
+        group.save(update_fields=['salary_percent', 'updated_at'])
+        log_audit(
+            actor=request.user,
+            action='UPDATE',
+            entity_type='StudyGroup',
+            entity_id=group.id,
+            changes_before={'salary_percent': str(old) if old is not None else None},
+            changes_after={'salary_percent': str(group.salary_percent) if group.salary_percent is not None else None},
+            reason=f"{group.name}: o'qituvchi ish haqi foizi o'zgartirildi"
+        )
+        messages.success(request, "O'qituvchi ish haqi foizi saqlandi.")
+    return redirect('academics:group_detail', group_id=group.id)
 
 
 @admin_or_owner_required
